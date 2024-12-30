@@ -5,6 +5,7 @@ import ErrorHandler from "../middleware/apiError.js";
 import asyncHandler from "../middleware/helper/asyncHandler.js";
 import sendEmail from "../middleware/helper/sendEmail.js";
 import fs from 'fs';    
+import LuckyDraw from "../DataModels/LuckyDraw.js";
 
 cloudinary.config({
     cloud_name: "dwpdxuksp",
@@ -300,37 +301,40 @@ export const logout = asyncHandler(async (req, res, next) => {
 });
 
 
-
-// Add a string to LuckyDraw array for a user
-export const addToLuckyDraw = asyncHandler(async (req, res, next) => {
-    const { userName } = req.params;
-    const { drawString } = req.body;
+// Get valid form IDs from user.formFilled
+export const getValidFormIds = asyncHandler(async (req, res, next) => {
+    const userId = req.user._id;
 
     try {
-        // Check if the requesting user is an admin
-        if (req.user.role !== 'admin') {
-            return next(new ErrorHandler('You are not authorized to perform this action', 403));
-        }
-
-        // Find the user by userName
-        const user = await User.findOne({ userName });
+        // Find the user by ID
+        const user = await User.findById(userId);
         if (!user) {
             return next(new ErrorHandler('User not found', 404));
         }
 
-        // Push the string into the LuckyDraw array
-        user.LuckyDraw.push(drawString);
+        // Filter valid form IDs
+        const validFormIds = [];
+        for (let i = 0; i < user.formFilled.length; i++) {
+            const formId = user.formFilled[i];
+            const form = await LuckyDraw.findById(formId);
+            if (form) {
+                validFormIds.push(formId);
+            } else {
+                // Remove invalid form ID from user.formFilled
+                user.formFilled.splice(i, 1);
+                i--; // Adjust index after removal
+            }
+        }
 
         // Save the updated user
         await user.save();
 
         res.status(200).json({
             success: true,
-            message: 'String added to LuckyDraw successfully',
-            user
+            validFormIds
         });
     } catch (error) {
-        console.log('Error while adding to LuckyDraw:', error);
+        console.log('Error while fetching valid form IDs:', error);
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });

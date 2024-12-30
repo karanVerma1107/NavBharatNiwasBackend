@@ -18,6 +18,11 @@ const siteSchema = new mongoose.Schema({
     enum: ['ongoing', 'upcoming', 'testimonial'],
     required: true
   },
+  formYes: {
+    type: Boolean,
+    required: true,
+    default: false
+  },
 
 }, {
   timestamps: true // Automatically adds createdAt and updatedAt fields

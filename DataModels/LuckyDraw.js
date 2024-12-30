@@ -17,7 +17,30 @@ const luckyDrawSchema = new mongoose.Schema({
     siteName: {
         type: String,
         required: true
-    }
+    },
+    AdhaarNo: {
+        type: String,
+        required: true
+    },
+    PANno: {
+        type: String,
+        required: true
+    },
+    image: {
+        type: String,
+        required: true
+    },
+    fatherName: {
+        type: String,
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+    },
+
+    
 }, {
     timestamps: true // Automatically adds createdAt and updatedAt fields
 });

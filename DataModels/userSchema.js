@@ -5,8 +5,6 @@ import bcrypt from 'bcrypt';
 const userSchema = new mongoose.Schema({
     userName: {
         type: String,
-        
-        
     },
     name: {
         type: String,
@@ -19,10 +17,10 @@ const userSchema = new mongoose.Schema({
         unique: true,
     
     },
-    formFilled: {
+    formFilled: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'LuckyDraw'
-    },
+    }],
     receipts: [{
         type: String,
         

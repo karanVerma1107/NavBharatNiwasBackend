@@ -14,7 +14,7 @@ cloudinary.config({
 
 // Add a Site to inventory
 export const addSite = asyncHandler(async (req, res, next) => {
-    const { name, description, current } = req.body; // Default discount to 0
+    const { name, description, current, formYes } = req.body; // Default discount to 0
     const images = req.files; // Assuming `req.files` contains the uploaded images
 
     // Check if user is admin
@@ -22,7 +22,7 @@ export const addSite = asyncHandler(async (req, res, next) => {
         return next(new ErrorHandler('You are not authorized to add a product', 403));
     }
 
-    console.log(name, description, current, images);
+    console.log(name, description, current, images, formYes);
 
     try {
         // Validate input fields
@@ -60,6 +60,7 @@ export const addSite = asyncHandler(async (req, res, next) => {
             description,
             current,
             images: imageUrls, // Store Cloudinary image URLs
+            formYes: formYes || false
            
         });
 
@@ -113,7 +114,7 @@ export const getSitesWithPagination = asyncHandler(async (req, res, next) => {
 //modify site after uploading
 export const editSite = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
-    const { name, description, current } = req.body;
+    const { name, description, current, formYes } = req.body;
 
     try {
         // Find the site by ID
@@ -131,6 +132,7 @@ export const editSite = asyncHandler(async (req, res, next) => {
         site.name = name || site.name;
         site.description = description || site.description;
         site.current = current || site.current;
+        site.formYes = formYes || site.formYes;
 
         // Save the updated site
         await site.save();

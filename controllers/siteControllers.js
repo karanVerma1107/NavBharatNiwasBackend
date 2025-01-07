@@ -4,6 +4,7 @@ import ErrorHandler from "../middleware/apiError.js";
 import cloudinary from 'cloudinary';
 import fs from 'fs';
 import FAQ from "../DataModels/FAQ.js";
+import User from "../DataModels/userSchema.js";
 
 cloudinary.config({
     cloud_name: "dwpdxuksp",
@@ -14,6 +15,10 @@ cloudinary.config({
 
 // Add a Site to inventory
 export const addSite = asyncHandler(async (req, res, next) => {
+
+    console.log("req.body",req.body);
+    console.log("req.files",req.files);
+
     const { name, description, current, formYes } = req.body; // Default discount to 0
     const images = req.files; // Assuming `req.files` contains the uploaded images
 
@@ -60,7 +65,9 @@ export const addSite = asyncHandler(async (req, res, next) => {
             description,
             current,
             images: imageUrls, // Store Cloudinary image URLs
-            formYes: formYes || false
+            formYes: formYes || false,
+            postedBy: req.user.userName
+
            
         });
 
@@ -70,13 +77,13 @@ export const addSite = asyncHandler(async (req, res, next) => {
         // Respond with success message
         return res.status(201).json({
             success: true,
-            message: 'Product added successfully!',
+            message: 'Site added successfully!',
             site: newSite,
         });
 
     } catch (error) {
-        console.error('Error adding product:', error);
-        return next(new ErrorHandler('Error adding product. Please try again.', 500));
+        console.error('Error adding site:', error);
+        return next(new ErrorHandler('Error adding site. Please try again.', 500));
     }
 });
 
@@ -303,3 +310,152 @@ export const deleteFAQsBeforeDate = asyncHandler(async (req, res, next) => {
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });
+
+
+
+
+
+
+
+// Upload Receipt
+export const uploadReceipt = async (req, res, next) => {
+    try {
+        const { name, userId } = req.body;
+        const file = req.file; // Get the file path from Cloudinary
+
+        let user;
+
+        if (req.user.role === 'admin' && userId) {
+            // If the user is an admin and a userId is provided, find the user by ID
+            user = await User.findById(userId);
+        } else {
+            return res.status(401).json({
+                success: false,
+                message: 'Not authorized user'
+            });
+        }
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Not authorized user'
+            });
+        }
+
+        // Upload file to Cloudinary
+        const result = await cloudinary.uploader.upload(file, {
+            resource_type: 'raw' // Ensure the resource type is set to 'raw' for non-image files
+        });
+
+        // Delete local file after upload to Cloudinary
+        fs.unlink(file, (err) => {
+            if (err) {
+                console.error(`Failed to delete file: ${file}`, err);
+            } else {
+                console.log(`File deleted from local server: ${file}`);
+            }
+        });
+
+        // Add the receipt to the user's receipts array
+        user.receipts.push({ name, file: result.secure_url });
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Receipt uploaded successfully',
+            receipts: user.receipts
+        });
+    } catch (error) {
+        console.log('Error while uploading receipt:', error);
+        return next(new ErrorHandler('Something went wrong, please try again', 500));
+    }
+};
+
+
+// Function to get images of top 5 sites in reverse order
+export const getTop5SiteImages = asyncHandler(async (req, res, next) => {
+    try {
+        // Fetch top 5 sites sorted by creation date in descending order
+        const sites = await Site.find().sort({ createdAt: -1 }).limit(5);
+
+        // Extract required fields from the sites
+        const siteData = sites.map(site => ({
+            _id: site._id,
+            current: site.current,
+            name: site.name,
+            images: site.images
+        })).reverse();
+
+        // Respond with the site data
+        return res.status(200).json({
+            success: true,
+            sites: siteData
+        });
+    } catch (error) {
+        console.log('Error while fetching top 5 site images:', error);
+        return next(new ErrorHandler('Something went wrong, please try again', 500));
+    }
+});
+
+
+export const getPostsByCurrentStatus = asyncHandler(async (req, res, next) => {
+    const { status } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 4;
+    const skip = (page - 1) * limit;
+
+    if (!['ongoing', 'upcoming', 'testimonial'].includes(status)) {
+        return next(new ErrorHandler('Invalid status parameter', 400));
+    }
+
+    try {
+        // Fetch posts based on current status with pagination
+        const sites = await Site.find({ current: status })
+            .skip(skip)
+            .limit(limit);
+
+        // Get total count of sites for the given status
+        const totalSites = await Site.countDocuments({ current: status });
+
+        // Respond with the site data and pagination info
+        return res.status(200).json({
+            success: true,
+            sites,
+            page,
+            pages: Math.ceil(totalSites / limit),
+        });
+    } catch (error) {
+        console.log('Error while fetching posts by current status:', error);
+        return next(new ErrorHandler('Something went wrong, please try again', 500));
+    }
+});
+
+
+
+ // Search site by name (returns name and id)
+export const searchSite = async (req, res, next) => {
+  try {
+    const searchQuery = req.query.name;  // Get search query from URL params
+
+    // Check if search query is provided
+    if (!searchQuery) {
+      throw new ErrorHandler('Search query is required', 400); // Throw custom error if query is missing
+    }
+
+    // Use a case-insensitive regex to find sites starting with the search query
+    const sites = await Site.find({
+      name: { $regex: `^${searchQuery}`, $options: 'i' },  // Match starting string (case-insensitive)
+    }).select('name _id'); // Only select name and _id fields
+
+    // If no sites are found
+    if (!sites || sites.length === 0) {
+      throw new ErrorHandler('No sites found matching the search query', 404); // Custom error if no sites match
+    }
+
+    // Return matching sites
+    return res.status(200).json(sites);
+  } catch (error) {
+    // If an error occurs, pass it to the error handler
+    next(error);
+  }
+};

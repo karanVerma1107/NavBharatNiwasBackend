@@ -14,7 +14,7 @@ const luckyDrawSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    siteName: {
+    occupation: {
         type: String,
         required: true
     },
@@ -34,13 +34,19 @@ const luckyDrawSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    address: {
+        type: String,
+        required: true
+    },
     status: {
         type: String,
         enum: ['pending', 'approved', 'rejected'],
         default: 'pending'
     },
-
-    
+    openingDate:{
+        type:Date,
+        required:true
+    },
 }, {
     timestamps: true // Automatically adds createdAt and updatedAt fields
 });

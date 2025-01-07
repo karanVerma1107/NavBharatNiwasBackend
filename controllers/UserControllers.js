@@ -112,6 +112,7 @@ export const otpSendToVerify = asyncHandler(async (req, res, next) => {
 // OTP Verification and Account Creation
 export const verifyOtpAndCreateAccount = asyncHandler(async (req, res, next) => {
     const { email, otp } = req.body;
+    console.log("runned here..");
 
     try {
         // Find the temporary user based on email
@@ -142,6 +143,8 @@ export const verifyOtpAndCreateAccount = asyncHandler(async (req, res, next) => 
   // Generate username based on email (before the @ symbol)
   const username = email.split('@')[0];
 
+  const accessToken = await generateAndsaveTokens(tempUser, res);
+
   tempUser.userName = username;
 
         // Save the updated user
@@ -150,7 +153,8 @@ export const verifyOtpAndCreateAccount = asyncHandler(async (req, res, next) => 
         res.status(201).json({
             success: true,
             message: 'Account created successfully',
-            user: tempUser
+            user: tempUser,
+            accessToken
         });
     } catch (error) {
         console.log('Error while verifying OTP and creating account:', error);
@@ -238,7 +242,7 @@ export const verifyOtpAndLogin = asyncHandler(async (req, res, next) => {
         }
 
         // OTP is valid, now generate and return an access token
-        const accessToken = await generateAndsaveTokens(user, res); // Assuming tokens are generated and set via this function
+        const accessToken = await generateAndsaveTokens(user, res);  // Assuming tokens are generated and set via this function
 
         // Clear OTP after successful verification
        
@@ -338,3 +342,32 @@ export const getValidFormIds = asyncHandler(async (req, res, next) => {
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });
+
+
+//get user from token
+// Get user from token
+export const getUserFromToken = asyncHandler(async (req, res, next) => {
+    try {
+        const userId = req.user.id; // Get user ID from req.user
+
+        const user = await User.findById(userId); // Find user by ID
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Not authorized user'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            auth: true,
+            user
+        });
+    } catch (error) {
+        console.log('Error while fetching user from token:', error);
+        return next(new ErrorHandler('Something went wrong, please try again', 500));
+    }
+});
+
+

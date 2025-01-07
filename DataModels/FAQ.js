@@ -1,9 +1,8 @@
 import mongoose from 'mongoose';
 
 const faqSchema = new mongoose.Schema({
-    site: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Site',
+    city: {
+        type: String,
         required: true
     },
     Name: {
@@ -13,7 +12,17 @@ const faqSchema = new mongoose.Schema({
     phoneNo:{
         type: String,
         required: true
+    },
+    budget:{
+        type: String,
+        required: true,
+        enum: [
+            '10 lakh to 20 lakh',
+            '30 lakh to 40 lakh',
+            '3 crore to 4 crore'
+        ]
     }
+
    
 }, {
     timestamps: true // Automatically adds createdAt and updatedAt fields

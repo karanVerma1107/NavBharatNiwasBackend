@@ -1,6 +1,6 @@
 import express from 'express';
 import { isAuthenticatedUser } from '../middleware/auth.js';    
-import { addSite, createFAQ, deleteFAQsBeforeDate, deleteSite, editSite, getAllFAQs, getSiteById, getSitesWithPagination } from '../controllers/siteControllers.js';
+import { addSite, createFAQ, deleteFAQsBeforeDate, deleteSite, editSite, getAllFAQs, getPostsByCurrentStatus, getSiteById, getSitesWithPagination, getTop5SiteImages, searchSite, uploadReceipt } from '../controllers/siteControllers.js';
 import { upload } from '../middleware/helper/multer.js';
 
 const Srouter = express.Router();
@@ -13,6 +13,10 @@ Srouter.route('/getSite/:id').get(getSiteById);
 Srouter.route('/createFAQ/:id').post(createFAQ);
 Srouter.route('/getFAQ').get(isAuthenticatedUser,getAllFAQs);
 Srouter.route('/deleteFAQ').delete(isAuthenticatedUser, deleteFAQsBeforeDate);
+Srouter.route('/uploadReceipt').post(isAuthenticatedUser, upload.single('file'),uploadReceipt)
+Srouter.route('/getImages').get(getTop5SiteImages);
+Srouter.route('/sites/:status').get(getPostsByCurrentStatus);
+Srouter.route('/search').get(searchSite);
 
 
 export default Srouter;

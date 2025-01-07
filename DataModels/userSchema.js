@@ -22,7 +22,14 @@ const userSchema = new mongoose.Schema({
         ref: 'LuckyDraw'
     }],
     receipts: [{
-        type: String,
+        name: {
+            type: String,
+            required: true
+        },
+        file: {
+            type: String,
+            required: true
+        }
         
     }],
     otp: {
@@ -41,7 +48,8 @@ const userSchema = new mongoose.Schema({
         
     },
     history: [{
-        type: String
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'IsAllow' // Linking to the IsAllow model
      }],
     role:{
         type: String,

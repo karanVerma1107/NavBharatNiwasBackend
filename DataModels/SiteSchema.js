@@ -23,6 +23,11 @@ const siteSchema = new mongoose.Schema({
     required: true,
     default: false
   },
+  postedBy:{
+    type: String,
+    ref: 'User',
+    required: true
+  }
 
 }, {
   timestamps: true // Automatically adds createdAt and updatedAt fields

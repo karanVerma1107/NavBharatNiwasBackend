@@ -33,8 +33,8 @@ const generateAndsaveTokens = async(user, res)=>{
         res.cookie('accessToken',
             accessToken,{
                 httpOnly: true,
-                secure: false,
-                sameSite: 'Lax',
+                secure: true,
+                sameSite: 'None',
                 expires: new Date( Date.now() + 15*24*60*60*1000 ),
                 path:'/'
 

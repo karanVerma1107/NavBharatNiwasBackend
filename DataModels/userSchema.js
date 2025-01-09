@@ -32,6 +32,20 @@ const userSchema = new mongoose.Schema({
         }
         
     }],
+
+    EOI: [{
+        name: {
+            type: String,
+            required: true
+        },
+        file: {
+            type: String,
+            required: true
+        }
+        
+    }],
+
+
     otp: {
         type: String,
         trim: true

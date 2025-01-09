@@ -30,10 +30,10 @@ const isAllowSchema = new mongoose.Schema({
         ref: 'User', // Assuming 'User' model is used for admins/users
         required: true
     },
-    result:{
+    result:[{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // Assuming 'User' model is used for admins/users
-    }
+        ref: 'LuckyDraw', // Assuming 'User' model is used for admins/users
+    }]
 }, {
     timestamps: true // Automatically adds createdAt and updatedAt fields
 });

@@ -5,6 +5,7 @@ import ErrorHandler from "../middleware/apiError.js";
 import sendEmail from "../middleware/helper/sendEmail.js";
 import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
+import moment from 'moment';
 import IsAllow from "../DataModels/allowForm.js";
 
 cloudinary.config({
@@ -39,10 +40,11 @@ export const createForm = asyncHandler(async (req, res, next) => {
         }
 
         // Fetch the latest IsAllow document to check if the form is enabled and open
-        const isAllowDoc = await IsAllow.findOne({ userId }).sort({ createdAt: -1 });
+        const isAllowDoc = await IsAllow.findOne().sort({ createdAt: -1 });
 
         // If no IsAllow document found or form is not enabled
         if (!isAllowDoc || !isAllowDoc.isEnabled) {
+            console.log('isallow', isAllowDoc);
             return next(new ErrorHandler('Form is not enabled yet', 403));
         }
 
@@ -313,12 +315,23 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
             return next(new ErrorHandler('User associated with this LuckyDraw not found', 404));
         }
 
-        // If the action is approve, push the latest IsAllow document ID to the user's history
-        if (newStatus === 'approved') {
-            // Fetch the latest IsAllow document
+        // If the action is reject, remove the latest IsAllow document ID from the user's history
+        if (newStatus === 'rejected') {
             const latestIsAllow = await IsAllow.findOne({ userId }).sort({ createdAt: -1 });
             if (latestIsAllow) {
-                // Push the latest IsAllow _id to the user's history
+                // Remove the latest IsAllow _id from the user's history
+                const historyIndex = luckyDrawUser.history.indexOf(latestIsAllow._id);
+                if (historyIndex > -1) {
+                    luckyDrawUser.history.splice(historyIndex, 1);  // Remove the IsAllow ID from history array
+                    await luckyDrawUser.save();
+                }
+            }
+        }
+
+        // If the action is approve, push the latest IsAllow document ID to the user's history
+        if (newStatus === 'approved') {
+            const latestIsAllow = await IsAllow.findOne({ userId }).sort({ createdAt: -1 });
+            if (latestIsAllow) {
                 luckyDrawUser.history.push(latestIsAllow._id);
                 await luckyDrawUser.save();
             }
@@ -326,7 +339,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
 
         // Compose the email text
         const subject = `Your LuckyDraw form has been ${newStatus}`;
-        const text = `Dear ${luckyDrawUser.name},<br><br>Your application for the LuckyDraw has been ${newStatus}.<br><br>Thank you for participating!`;
+        const text = `Dear ${luckyDrawUser.name},<br><br>Your application for the LuckyDraw with ticket_id:${luckyDraw._id} has been ${newStatus}.<br><br>Thank you for participating!`;
 
         // Send an email to the user notifying them of the approval/rejection
         await sendEmail({
@@ -338,7 +351,6 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
         res.status(200).json({
             success: true,
             message: `LuckyDraw form has been ${newStatus} and an email has been sent to the user.`,
-            luckyDraw: luckyDraw
         });
 
     } catch (error) {
@@ -349,9 +361,10 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
 
 
 
+
 // Function to search LuckyDraw by ID
 export const searchLuckyDrawById = asyncHandler(async (req, res, next) => {
-    const { id } = req.body; // Extract 'id' from the request body
+    const { id } = req.params; // Extract 'id' from the request body
 
     try {
         // Get the logged-in user ID from req.user
@@ -377,7 +390,6 @@ export const searchLuckyDrawById = asyncHandler(async (req, res, next) => {
         // Return the LuckyDraw details
         res.status(200).json({
             success: true,
-            message: 'LuckyDraw form found',
             luckyDraw
         });
 
@@ -389,41 +401,67 @@ export const searchLuckyDrawById = asyncHandler(async (req, res, next) => {
 
 
 
-// Get all LuckyDraws with pagination (15 per page)
 export const getLuckyDraws = asyncHandler(async (req, res, next) => {
-    const { page = 1, limit = 15 } = req.query; // Default limit is now 15
+    // Default values
+    let page = req.query.page || 1;  // Default to page 1 if not provided
+    const limit = 15; // Fixed limit per page
 
     try {
-        // Convert page and limit to integers
-        const pageNumber = parseInt(page, 10);
-        const pageLimit = parseInt(limit, 10);
+        // Convert page to an integer (if provided)
+        page = parseInt(page, 10);
 
         // Validate page and limit
-        if (pageNumber < 1 || pageLimit < 1) {
-            return next(new ErrorHandler('Page number and limit must be greater than 0.', 400));
+        if (page < 1) {
+            return next(new ErrorHandler('Page number must be greater than 0.', 400));
         }
 
         // Calculate the starting index for pagination
-        const skip = (pageNumber - 1) * pageLimit;
+        const skip = (page - 1) * limit;
 
-        // Get total count of documents in LuckyDraw collection
-        const totalLuckyDraws = await LuckyDraw.countDocuments();
+        // Find the latest 'IsAllow' document
+        const latestIsAllow = await IsAllow.findOne()
+            .sort({ createdAt: -1 }); // Sorting by createdAt descending to get the latest document
 
-        // Fetch the lucky draws with pagination
-        const luckyDraws = await LuckyDraw.find()
-            .skip(skip)       // Skip the records before the page
-            .limit(pageLimit) // Limit the number of records per page (15 items per page)
-            .sort({ createdAt: -1 }); // Optionally, sort by creation date (descending)
+        if (!latestIsAllow) {
+            return next(new ErrorHandler('No active form found.', 404));
+        }
 
-        // Calculate total pages
-        const totalPages = Math.ceil(totalLuckyDraws / pageLimit);
+        // Get the list of LuckyDraw references from the latest IsAllow document
+        const luckyDrawIds = latestIsAllow.luckydraw;
 
+        // Initialize an array to store the valid LuckyDraw documents
+        const validLuckyDraws = [];
+
+        // Loop through the luckyDrawIds and fetch the corresponding LuckyDraw documents
+        for (const luckyDrawId of luckyDrawIds) {
+            const luckyDraw = await LuckyDraw.findById(luckyDrawId);
+
+            // If the LuckyDraw document is found, add it to the validLuckyDraws array
+            if (luckyDraw) {
+                validLuckyDraws.push(luckyDraw);
+            } else {
+                // If LuckyDraw is not found, remove the ID from the IsAllow document
+                await IsAllow.updateOne(
+                    { _id: latestIsAllow._id },
+                    { $pull: { luckydraw: luckyDrawId } } // Remove the invalid ID from the luckydraw array
+                );
+            }
+        }
+
+        // Paginate the validLuckyDraws array for the current page
+        const paginatedLuckyDraws = validLuckyDraws.slice(skip, skip + limit);
+
+        // Calculate total pages based on the valid lucky draw count
+        const totalLuckyDraws = validLuckyDraws.length;
+        const totalPages = Math.ceil(totalLuckyDraws / limit);
+
+        // Return the result in response
         res.status(200).json({
             success: true,
             totalLuckyDraws,
             totalPages,
-            currentPage: pageNumber,
-            luckyDraws
+            currentPage: page,
+            luckyDraws: paginatedLuckyDraws
         });
 
     } catch (error) {
@@ -431,7 +469,6 @@ export const getLuckyDraws = asyncHandler(async (req, res, next) => {
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });
-
 
 
 // Fetch the latest IsAllow document
@@ -495,4 +532,151 @@ export const getUserFormFilledWithOpeningDate = asyncHandler(async (req, res, ne
         success: true,
         formFilled: reversedLuckyDrawData
     });
+});
+
+
+
+// Get Lucky Draw by ID
+export const getLuckyDrawById = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+  
+    // Find the lucky draw by ID
+    const luckyDraw = await LuckyDraw.findById(id);
+  
+    if (!luckyDraw) {
+      return next(new ErrorHandler('Lucky Draw not found', 404)); // If not found, throw a 404 error
+    }
+  
+    res.status(200).json({
+      success: true,
+      draw: luckyDraw
+    });
+  });
+  
+
+
+  
+  export const pushIdToResult = asyncHandler(async (req, res, next) => {
+    const { id } = req.params; // Get the ID from the request params
+
+    try {
+        // Find the latest 'IsAllow' document based on the 'createdAt' field (most recent one)
+        const latestIsAllow = await IsAllow.findOne().sort({ createdAt: -1 });
+
+        // If no IsAllow document is found, return an error
+        if (!latestIsAllow) {
+            return next(new ErrorHandler('No active IsAllow form found', 404));
+        }
+
+        // Check if the provided ID is already in the result array to avoid duplicates
+        if (latestIsAllow.result.includes(id)) {
+            return next(new ErrorHandler(`ID ${id} is already in the result array`, 400));
+        }
+
+        // Push the provided ID to the 'result' array in the latest IsAllow document
+        latestIsAllow.result.push(id);
+
+        // Save the updated 'IsAllow' document
+        await latestIsAllow.save();
+
+        // Send a success message
+        res.status(200).json({
+            success: true,
+            message: `Successfully pushed ${id} to result`,
+            
+        });
+
+    } catch (error) {
+        console.log('Error while pushing to result:', error);
+        return next(new ErrorHandler('Something went wrong, please try again', 500));
+    }
+});
+
+
+
+
+
+// Function to handle form opening date check and result fetching
+export const checkFormAndFetchResults = async (req, res) => {
+    try {
+        const formId = req.params.formId; // Extract formId from request parameters
+
+        // Find the form by ID
+        const form = await IsAllow.findById(formId).populate('result'); // Populate result array
+        
+        if (!form) {
+            return res.status(404).json({ message: "Form not found." }); // Form not found
+        }
+
+        const currentDate = moment(); // Get today's date
+        const formOpeningDate = moment(form.formOpeningDate); // Convert formOpeningDate to moment object
+
+        // Check if the form is not open yet
+        if (formOpeningDate.isAfter(currentDate)) {
+            const daysRemaining = formOpeningDate.diff(currentDate, 'days'); // Calculate days remaining
+            return res.json({ message: `Wait for ${daysRemaining} day(s) until the form opens.` });
+        }
+
+        // If the form is open or the opening date is today or in the past, fetch the LuckyDraws in the result array
+        const luckyDraws = await LuckyDraw.find({ '_id': { $in: form.result } });
+
+        if (luckyDraws.length === 0) {
+            return res.json({ message: "No lucky draw results available." });
+        }
+
+        // Return the found lucky draws
+        return res.json({ luckyDraws });
+    } catch (error) {
+        console.error("Error checking form and fetching results:", error);
+        return res.status(500).json({ message: "An error occurred while processing the request." });
+    }
+};
+
+
+
+
+
+
+
+export const updateUserHistory = asyncHandler(async (req, res) => {
+    try {
+        // Access the user ID from req.user._id
+        const userId = req.user._id;
+
+        // Find the user by ID and populate the 'history' field with IsAllow documents
+        const user = await User.findById(userId).populate('history');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Extract all history IDs
+        const historyIds = user.history;
+
+        // Find all IsAllow documents whose IDs are in the history array
+        const validIsAllows = await IsAllow.find({ '_id': { $in: historyIds } });
+
+        // Create an array to hold valid IsAllow documents
+        const validIsAllowIds = validIsAllows.map(isAllow => isAllow._id.toString());
+
+        // Filter out invalid IsAllow IDs from the user's history
+        const updatedHistory = historyIds.filter(id => validIsAllowIds.includes(id._id.toString()));
+
+        // If the history has changed, update the user's history field
+        if (updatedHistory.length !== historyIds.length) {
+            user.history = updatedHistory;
+            await user.save(); // Save the updated user document
+        }
+
+        // If there were valid IsAllow documents, return them
+        const updatedIsAllowDocs = validIsAllows;
+
+        return res.json({
+            message: 'History updated successfully',
+            updatedIsAllowDocs // Return the full IsAllow documents
+        });
+
+    } catch (error) {
+        console.error('Error updating user history:', error);
+        return res.status(500).json({ message: 'An error occurred while updating user history' });
+    }
 });

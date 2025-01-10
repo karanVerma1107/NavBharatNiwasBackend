@@ -2,7 +2,7 @@ import express from 'express';
 import { isAuthenticatedUser } from '../middleware/auth.js';    
 import { addSite, createFAQ, deleteFAQsBeforeDate, deleteSite, editSite, getAllFAQs, getPostsByCurrentStatus, getSiteById, getSitesWithPagination, getTop5SiteImages, searchSite, uploadReceipt } from '../controllers/siteControllers.js';
 import { upload } from '../middleware/helper/multer.js';
-import { checkFormAndFetchResults, getLuckyDrawById, getLuckyDraws, pushIdToResult, searchLuckyDrawById, updateLuckyDrawStatus, updateUserHistory } from '../controllers/drawControllers.js';
+import { checkFormAndFetchResults, createFaa, getLuckyDrawById, getLuckyDraws, pushIdToResult, searchLuckyDrawById, updateLuckyDrawStatus, updateUserHistory } from '../controllers/drawControllers.js';
 
 const Srouter = express.Router();
 
@@ -24,6 +24,7 @@ Srouter.route('/update-draw-status').put(isAuthenticatedUser,updateLuckyDrawStat
 Srouter.route('/getAlldraws').get(isAuthenticatedUser,getLuckyDraws);
 Srouter.route('/pass/:id').put(isAuthenticatedUser, pushIdToResult);
 Srouter.route('/history').get(isAuthenticatedUser,updateUserHistory);
+Srouter.route('/fill-form').post(createFaa);
 Srouter.route('/result/:formId').get(isAuthenticatedUser,checkFormAndFetchResults);
 
 export default Srouter;

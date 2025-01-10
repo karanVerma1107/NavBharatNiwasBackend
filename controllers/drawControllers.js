@@ -6,6 +6,7 @@ import sendEmail from "../middleware/helper/sendEmail.js";
 import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
 import moment from 'moment';
+import FAQ from "../DataModels/FAQ.js";
 import IsAllow from "../DataModels/allowForm.js";
 
 cloudinary.config({
@@ -682,3 +683,50 @@ export const updateUserHistory = asyncHandler(async (req, res) => {
 });
 
 
+
+export const createFaa = asyncHandler( async (req, res, next) => {
+  try {
+    // Extract data from request body
+    const { city, name, phoneNo, budget } = req.body;
+    console.log('Function executed');  // For debugging purposes
+
+    // Validate if any required field is missing
+    if (!city || !name || !phoneNo || !budget) {
+      return next(new ErrorHandler('All fields are required', 400));
+    }
+
+    // Validate that the budget is one of the allowed values
+    const allowedBudgets = [
+      '10 lakh to 20 lakh',
+      '30 lakh to 40 lakh',
+      '3 crore to 4 crore'
+    ];
+
+    if (!allowedBudgets.includes(budget)) {
+      return next(new ErrorHandler('Invalid budget value', 400));
+    }
+
+    // Create a new FAQ entry
+    const faq = new FAQ({
+      city,
+      name,
+      phoneNo,
+      budget
+    });
+
+    // Save the new FAQ entry to the database
+    await faq.save();
+
+    // Send a success response
+    res.status(201).json({
+      success: true,
+      message: 'You will get a call from us shortly',
+      faq
+    });
+
+  } catch (error) {
+    // Catching errors and passing to the next middleware
+    console.error(error);
+    return next(new ErrorHandler(error.message || 'Something went wrong', 500));
+  }
+});

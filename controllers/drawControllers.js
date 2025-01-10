@@ -92,7 +92,7 @@ export const createForm = asyncHandler(async (req, res, next) => {
             await isAllowDoc.save();
 
             // Compose the email text
-            const text = `Your application for lucky draw with ticket_id <b>${newForm._id}</b> has been submitted and is in <b>PENDING</b> state. To approve it, contact 9696581944.`;
+            const text = `Your application for lucky draw with ticket_id <b>${newForm._id}</b> has been submitted and is in <b>PENDING</b> state. To approve it, contact +917531027943.`;
 
             // Send email to the user
             await sendEmail({

@@ -15,13 +15,12 @@ dotenv.config({ path: 'o.env' });
 const app = express();
 const port = process.env.PORT || 3000;
 
-{/*
+
 app.use(cors({
   origin: 'https://navbharatniwas.in', // Your Netlify site
   credentials: true, // Allow credentials (cookies) to be sent
 }));
-*/}
-app.use(cors());
+
 
 app.use(express.json());
 

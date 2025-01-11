@@ -90,9 +90,17 @@ export const createForm = asyncHandler(async (req, res, next) => {
 
             isAllowDoc.luckydraw.push(newForm._id); 
             await isAllowDoc.save();
+            
 
             // Compose the email text
-            const text = `Your application for lucky draw with ticket_id <b>${newForm._id}</b> has been submitted and is in <b>PENDING</b> state. To approve it, contact +917531027943.`;
+            const text = `
+<p>Dear ${user.name},</p>
+<p>Your application for the Lucky Draw with ticket ID <b>${newForm._id}</b> has been submitted and is currently in <b>PENDING</b> state.</p>
+<p>To approve the application, please contact: <b>+917531027943</b></p>
+<p><b>LINK:</b> <a href="https://navbharatniwas.in/draw/${newForm._id}">Click here to view your application</a></p>
+<p>Thank you for participating!</p>
+`;
+
 
             // Send email to the user
             await sendEmail({
@@ -340,7 +348,10 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
 
         // Compose the email text
         const subject = `Your LuckyDraw form has been ${newStatus}`;
-        const text = `Dear ${luckyDrawUser.name},<br><br>Your application for the LuckyDraw with ticket_id:${luckyDraw._id} has been ${newStatus}.<br><br>Thank you for participating!`;
+        const text = `Dear ${luckyDrawUser.name},<br><br>
+Your application for the LuckyDraw with ticket_id: <b>${luckyDraw._id}</b> has been <b>${newStatus}</b>.<br><br>
+Thank you for participating!<br><br>
+<b>LINK:</b> <a href="https://navbharatniwas.in/draw/${luckyDraw._id}">https://navbharatniwas.in/draw/${luckyDraw._id}</a>`;
 
         // Send an email to the user notifying them of the approval/rejection
         await sendEmail({

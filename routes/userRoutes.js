@@ -12,7 +12,7 @@ Urouter.route('/verifySignupOtp').post(verifyOtpAndCreateAccount);
 Urouter.route('/sendLoginOtp').post(sendLoginOtp);
 Urouter.route('/verifyLoginOtp').post(verifyOtpAndLogin);
 Urouter.route('/logout').post(isAuthenticatedUser, logout);
-Urouter.route('/filldraw').post(isAuthenticatedUser, createForm);
+Urouter.route('/filldraw').post(isAuthenticatedUser, createIsAllowForm);
 Urouter.route('/create-draw').post(isAuthenticatedUser,upload.single('image'), createForm);
 Urouter.route('/isAllowLatest').get(getIsallowLatest);
 Urouter.route('/user-valid-id').get(isAuthenticatedUser,getValidFormIds);

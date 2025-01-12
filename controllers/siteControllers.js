@@ -430,32 +430,30 @@ export const getPostsByCurrentStatus = asyncHandler(async (req, res, next) => {
     }
 });
 
+// Search site by name (returns name and id) and only those with current status as 'ongoing'
+ // Search site by name and only those with current status as 'ongoing
+export  const searchSite = asyncHandler(async (req, res, next) => {
+  const searchQuery = req.query.name;  // Get search query from URL params
 
-
- // Search site by name (returns name and id)
-export const searchSite = async (req, res, next) => {
-  try {
-    const searchQuery = req.query.name;  // Get search query from URL params
-
-    // Check if search query is provided
-    if (!searchQuery) {
-      throw new ErrorHandler('Search query is required', 400); // Throw custom error if query is missing
-    }
-
-    // Use a case-insensitive regex to find sites starting with the search query
-    const sites = await Site.find({
-      name: { $regex: `^${searchQuery}`, $options: 'i' },  // Match starting string (case-insensitive)
-    }).select('name _id'); // Only select name and _id fields
-
-    // If no sites are found
-    if (!sites || sites.length === 0) {
-      throw new ErrorHandler('No sites found matching the search query', 404); // Custom error if no sites match
-    }
-
-    // Return matching sites
-    return res.status(200).json(sites);
-  } catch (error) {
-    // If an error occurs, pass it to the error handler
-    next(error);
+  // Check if search query is provided
+  if (!searchQuery) {
+    throw new ErrorHandler('Search query is required', 400); // Throw custom error if query is missing
   }
-};
+
+  // Use a case-insensitive regex to find sites that contain the search query anywhere in the name
+  const sites = await Site.find({
+    name: { 
+      $regex: `${searchQuery}`,  // This will match the search query anywhere in the name
+      $options: 'i'  // Make the regex case-insensitive
+    }, 
+    current: 'ongoing'  // Only return sites where current status is 'ongoing'
+  }).select('name _id');  // Only select name and _id fields
+
+  // If no sites are found
+  if (!sites || sites.length === 0) {
+    throw new ErrorHandler('No sites found matching the search query and current status as ongoing', 404);
+  }
+
+  // Return matching sites
+  return res.status(200).json(sites);
+});

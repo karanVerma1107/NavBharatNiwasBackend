@@ -17,16 +17,15 @@ cloudinary.config({
 
 // Create a new form
 export const createForm = asyncHandler(async (req, res, next) => {
-    const { name, phoneNo, occupation, fatherName, AdhaarNo, PANno, address } = req.body;
+    const { name, phoneNo, occupation, fatherName, AdhaarNo, PANno, address, DOB, nationality, project } = req.body;
     const image = req.file; // Assuming single image upload
-    
 
     try {
         // Get user ID from req.user
         const userId = req.user._id;
 
-        if(!userId){
-            return next(new ErrorHandler('login to access this resource', 401))
+        if (!userId) {
+            return next(new ErrorHandler('Login to access this resource', 401));
         }
 
         // Find the user by ID to get their email and name
@@ -42,6 +41,7 @@ export const createForm = asyncHandler(async (req, res, next) => {
 
         // Fetch the latest IsAllow document to check if the form is enabled and open
         const isAllowDoc = await IsAllow.findOne().sort({ createdAt: -1 });
+        console.log('now, isallow', isAllowDoc);
 
         // If no IsAllow document found or form is not enabled
         if (!isAllowDoc || !isAllowDoc.isEnabled) {
@@ -68,7 +68,7 @@ export const createForm = asyncHandler(async (req, res, next) => {
                 }
             });
 
-            // Create a new form
+            // Create a new form with additional fields: DOB, nationality, and project
             const newForm = new LuckyDraw({
                 userId,
                 name,
@@ -78,6 +78,9 @@ export const createForm = asyncHandler(async (req, res, next) => {
                 AdhaarNo,
                 PANno,
                 address,
+                DOB,               // Added DOB
+                nationality,       // Added nationality
+                project,           // Added project
                 openingDate,
                 image: imageUrl // Store the Cloudinary URL in the form
             });
@@ -85,12 +88,19 @@ export const createForm = asyncHandler(async (req, res, next) => {
             // Save the form
             await newForm.save();
 
+            // Link the form to the user and IsAllow documents
             user.formFilled.push(newForm._id);
             await user.save();
 
+<<<<<<< HEAD
             isAllowDoc.luckydraw.push(newForm._id); 
             await isAllowDoc.save();
             
+=======
+            isAllowDoc.luckydraw.push(newForm._id);
+
+            await isAllowDoc.save().then(console.log('isallow now,', isAllowDoc));
+>>>>>>> KaranB
 
             // Compose the email text
             const text = `
@@ -100,7 +110,10 @@ export const createForm = asyncHandler(async (req, res, next) => {
 <p><b>LINK:</b> <a href="https://navbharatniwas.in/draw/${newForm._id}">Click here to view your application</a></p>
 <p>Thank you for participating!</p>
 `;
+<<<<<<< HEAD
 
+=======
+>>>>>>> KaranB
 
             // Send email to the user
             await sendEmail({
@@ -123,8 +136,6 @@ export const createForm = asyncHandler(async (req, res, next) => {
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });
-
-
 
 
 // Create a new IsAllow entry (for enabling the form)
@@ -327,6 +338,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
         // If the action is reject, remove the latest IsAllow document ID from the user's history
         if (newStatus === 'rejected') {
             const latestIsAllow = await IsAllow.findOne({ userId }).sort({ createdAt: -1 });
+            console.log('rejecting')
             if (latestIsAllow) {
                 // Remove the latest IsAllow _id from the user's history
                 const historyIndex = luckyDrawUser.history.indexOf(latestIsAllow._id);
@@ -352,6 +364,10 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
 Your application for the LuckyDraw with ticket_id: <b>${luckyDraw._id}</b> has been <b>${newStatus}</b>.<br><br>
 Thank you for participating!<br><br>
 <b>LINK:</b> <a href="https://navbharatniwas.in/draw/${luckyDraw._id}">https://navbharatniwas.in/draw/${luckyDraw._id}</a>`;
+<<<<<<< HEAD
+=======
+
+>>>>>>> KaranB
 
         // Send an email to the user notifying them of the approval/rejection
         await sendEmail({
@@ -412,7 +428,6 @@ export const searchLuckyDrawById = asyncHandler(async (req, res, next) => {
 });
 
 
-
 export const getLuckyDraws = asyncHandler(async (req, res, next) => {
     // Default values
     let page = req.query.page || 1;  // Default to page 1 if not provided
@@ -434,6 +449,8 @@ export const getLuckyDraws = asyncHandler(async (req, res, next) => {
         const latestIsAllow = await IsAllow.findOne()
             .sort({ createdAt: -1 }); // Sorting by createdAt descending to get the latest document
 
+        console.log('latestIsAllow', latestIsAllow);    
+
         if (!latestIsAllow) {
             return next(new ErrorHandler('No active form found.', 404));
         }
@@ -447,16 +464,11 @@ export const getLuckyDraws = asyncHandler(async (req, res, next) => {
         // Loop through the luckyDrawIds and fetch the corresponding LuckyDraw documents
         for (const luckyDrawId of luckyDrawIds) {
             const luckyDraw = await LuckyDraw.findById(luckyDrawId);
+            console.log('drawji', luckyDraw)
 
-            // If the LuckyDraw document is found, add it to the validLuckyDraws array
-            if (luckyDraw) {
+            // If the LuckyDraw document is found and its state is 'approved', add it to the validLuckyDraws array
+            if (luckyDraw && luckyDraw.status === 'approved') {
                 validLuckyDraws.push(luckyDraw);
-            } else {
-                // If LuckyDraw is not found, remove the ID from the IsAllow document
-                await IsAllow.updateOne(
-                    { _id: latestIsAllow._id },
-                    { $pull: { luckydraw: luckyDrawId } } // Remove the invalid ID from the luckydraw array
-                );
             }
         }
 
@@ -481,6 +493,8 @@ export const getLuckyDraws = asyncHandler(async (req, res, next) => {
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });
+
+
 
 
 // Fetch the latest IsAllow document

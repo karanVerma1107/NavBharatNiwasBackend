@@ -15,7 +15,10 @@ dotenv.config({ path: 'o.env' });
 const app = express();
 const port = process.env.PORT || 3000;
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> KaranB
 app.use(cors({
   origin: 'https://navbharatniwas.in', // Allow only this domain
   credentials: true, // Allow credentials (cookies)
@@ -24,7 +27,10 @@ app.use(cors({
 }));
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> KaranB
 app.use(express.json());
 
 app.use(cookieParser());

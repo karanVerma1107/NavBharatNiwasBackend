@@ -7,35 +7,22 @@ import errorHandler from './middleware/errorHandler.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
-
-
-// Load environment variables from 0.env file
+// Load environment variables from .env file
 dotenv.config({ path: 'o.env' });
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-<<<<<<< HEAD
-
-=======
->>>>>>> KaranB
+// CORS setup
 app.use(cors({
   origin: 'https://navbharatniwas.in', // Allow only this domain
   credentials: true, // Allow credentials (cookies)
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow methods (optional, but can be added)
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow methods (optional)
   allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers (optional)
 }));
 
-
-<<<<<<< HEAD
-
-=======
->>>>>>> KaranB
 app.use(express.json());
-
 app.use(cookieParser());
-
-
 
 // Define the path to the 'uploads' folder
 const __filename = fileURLToPath(import.meta.url); // Get the file name
@@ -54,14 +41,14 @@ app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
+// Routes for user and site
 import Urouter from './routes/userRoutes.js';
 app.use('/api/v1', Urouter);
 
 import Srouter from './routes/SiteRoute.js';
 app.use('/api/v1', Srouter);
 
-
-app.use(errorHandler)
+app.use(errorHandler);
 
 // Start the server
 app.listen(port, () => {

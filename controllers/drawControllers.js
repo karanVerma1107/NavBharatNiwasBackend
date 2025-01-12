@@ -92,15 +92,9 @@ export const createForm = asyncHandler(async (req, res, next) => {
             user.formFilled.push(newForm._id);
             await user.save();
 
-<<<<<<< HEAD
-            isAllowDoc.luckydraw.push(newForm._id); 
-            await isAllowDoc.save();
-            
-=======
             isAllowDoc.luckydraw.push(newForm._id);
 
             await isAllowDoc.save().then(console.log('isallow now,', isAllowDoc));
->>>>>>> KaranB
 
             // Compose the email text
             const text = `
@@ -110,10 +104,6 @@ export const createForm = asyncHandler(async (req, res, next) => {
 <p><b>LINK:</b> <a href="https://navbharatniwas.in/draw/${newForm._id}">Click here to view your application</a></p>
 <p>Thank you for participating!</p>
 `;
-<<<<<<< HEAD
-
-=======
->>>>>>> KaranB
 
             // Send email to the user
             await sendEmail({
@@ -364,10 +354,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
 Your application for the LuckyDraw with ticket_id: <b>${luckyDraw._id}</b> has been <b>${newStatus}</b>.<br><br>
 Thank you for participating!<br><br>
 <b>LINK:</b> <a href="https://navbharatniwas.in/draw/${luckyDraw._id}">https://navbharatniwas.in/draw/${luckyDraw._id}</a>`;
-<<<<<<< HEAD
-=======
 
->>>>>>> KaranB
 
         // Send an email to the user notifying them of the approval/rejection
         await sendEmail({

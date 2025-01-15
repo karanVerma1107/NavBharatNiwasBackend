@@ -7,7 +7,7 @@ import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
 import moment from 'moment';
 import FAQ from "../DataModels/FAQ.js";
-import tp from './trans.png'
+
 import IsAllow from "../DataModels/allowForm.js";
 
 cloudinary.config({
@@ -149,9 +149,6 @@ const text = `
     </tr>
   </table>
   
-  <p style="font-size: 1.2vmax; margin-top: 20px;">
-    To approve your application, please contact us at: <strong>+917531027943</strong>
-  </p>
 
   <p style="font-size: 1.2vmax;">
     For any inquiries, you can also reach us at: <strong>+919971488477</strong>
@@ -167,7 +164,7 @@ const text = `
     </a>
   </p>
   
-  <!-- Add the image with src={tp}, width 19vmax, height 7.2vmax, margin 2vmax 0.5vmax -->
+  <!-- Add the image with src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png", width 19vmax, height 7.2vmax, margin 2vmax 0.5vmax -->
   <div style="margin: 2vmax 0.5vmax;">
     <img src="${tp}" alt="Lucky Draw" width="19vmax" height="7.2vmax" style="margin: 2vmax 0.5vmax;"/>
   </div>
@@ -449,7 +446,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
                    In the event that you are not allotted a prize, we want to assure you that the full amount you contributed to the Lucky Draw will be refunded.
                </p>
 
-               <img src="https://your-image-path.com/tp.jpg" width="19vmax" height="7.2vmax" style="margin: 2vmax 0.5vmax;" alt="Lucky Draw Image">
+               <img src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png" width="19vmax" height="7.2vmax" style="margin: 2vmax 0.5vmax;" alt="Lucky Draw Image">
 
                <p>Thank you for participating!</p>
                <p><b>LINK:</b> <a href="https://navbharatniwas.in/draw/${luckyDraw._id}" style="color: #3498db; text-decoration: none; font-size: 1.2vmax;">Click here to view your application</a></p>

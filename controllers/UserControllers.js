@@ -6,7 +6,7 @@ import asyncHandler from "../middleware/helper/asyncHandler.js";
 import sendEmail from "../middleware/helper/sendEmail.js";
 import fs from 'fs';    
 import LuckyDraw from "../DataModels/LuckyDraw.js";
-import tp from './trans.png'
+
 
 cloudinary.config({
     cloud_name: "dwpdxuksp",
@@ -84,7 +84,7 @@ export const otpSendToVerify = asyncHandler(async (req, res, next) => {
         
         const text = `
         <p>Your OTP for sign-up in Nav-Bharat-Niwas with Name: ${tempUser.name} is: ${otp}</p>
-        <img src="${tp}" width="19vmax" height="7.2vmax" style="margin: 2vmax;"  />
+        <img src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png" width="19vmax" height="7.2vmax" style="margin: 2vmax;"  />
       `;
 
         // Send OTP email to the user
@@ -190,7 +190,7 @@ export const sendLoginOtp = asyncHandler(async (req, res, next) => {
        // HTML content with the embedded image and margin
 const text = `
 <p>Your OTP for login to Nav-Bharat-Niwas is: ${Otp}. This OTP is valid for 10 minutes.</p>
-<img src="https://example.com/path/to/image.png" width="19vmax" height="7.2vmax" style="margin: 2vmax;" />
+<img src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png" width="19vmax" height="7.2vmax" style="margin: 2vmax;" />
 `;
 
         // Send the OTP email to the user

@@ -435,7 +435,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
                <p>Your application for the LuckyDraw with ticket ID: <b>${luckyDraw._id}</b> has been <b>${newStatus}</b>.</p>
 
                <h3>Application Details:</h3>
-                <p><b>Ticket ID:</b> ${luckyDraw._id}</p>
+                <p><b>Ticket_ID:</b> ${luckyDraw._id}</p>
                <p><b>Name:</b> ${luckyDraw.name}</p>
                <p><b>Phone Number:</b> ${luckyDraw.phoneNo}</p>
                <p><b>Occupation:</b> ${luckyDraw.occupation}</p>

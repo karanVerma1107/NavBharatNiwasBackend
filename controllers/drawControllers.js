@@ -181,7 +181,7 @@ const text = `
 `;
 
 await sendEmail({
-  email: newForm.email,  // Email from the new form
+  email: user.email,  // Email from the new form
   subject: 'Application Form PENDING State Submitted',
   html: text // Use the html field to send HTML content
 });
@@ -455,7 +455,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
 
        // Send an email to the user notifying them of the approval/rejection
        await sendEmail({
-           email: luckyDrawUser.email,
+           email: user.email,
            subject,
            html: text // Use the html field to send HTML content
        });

@@ -466,7 +466,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
         });
 
     } catch (error) {
-        console.log('Error while updating LuckyDraw status:', error);
+        console.log('Error while updating LuckyDraw Status:', error);
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });

@@ -13,12 +13,20 @@ dotenv.config({ path: 'o.env' });
 const app = express();
 const port = process.env.PORT || 3000;
 
-// CORS setup
+
+const allowedOrigins = ['https://navbharatniwas.in', 'https://www.navbharatniwas.in'];
+
 app.use(cors({
-  origin: 'https://navbharatniwas.in', // Allow only this domain
-  credentials: true, // Allow credentials (cookies)
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow methods (optional)
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers (optional)
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());

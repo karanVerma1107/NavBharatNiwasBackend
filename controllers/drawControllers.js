@@ -107,6 +107,10 @@ const text = `
   
   <h3 style="color: #2c3e52;">Your Application Details:</h3>
   <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+  <tr>
+      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Ticket ID:</td>
+      <td style="padding: 8px;">${newForm._id}</td>
+    </tr>
     <tr>
       <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Name:</td>
       <td style="padding: 8px;">${newForm.name}</td>
@@ -164,7 +168,7 @@ const text = `
     </a>
   </p>
   
-  <!-- Add the image with src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png", width 19vmax, height 7.2vmax, margin 2vmax 0.5vmax -->
+  <!-- Add the image with src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png", width="154vmax" height="126.2vmax" margin 2vmax 0.5vmax -->
   <div style="margin: 2vmax 0.5vmax;">
     <img src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png" alt="Lucky Draw" width="19vmax" height="7.2vmax" style="margin: 2vmax 0.5vmax;"/>
   </div>
@@ -431,6 +435,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
                <p>Your application for the LuckyDraw with ticket ID: <b>${luckyDraw._id}</b> has been <b>${newStatus}</b>.</p>
 
                <h3>Application Details:</h3>
+                <p><b>Ticket ID:</b> ${luckyDraw._id}</p>
                <p><b>Name:</b> ${luckyDraw.name}</p>
                <p><b>Phone Number:</b> ${luckyDraw.phoneNo}</p>
                <p><b>Occupation:</b> ${luckyDraw.occupation}</p>
@@ -446,7 +451,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
                    In the event that you are not allotted a prize, we want to assure you that the full amount you contributed to the Lucky Draw will be refunded.
                </p>
 
-               <img src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png" width="19.1vmax" height="7.2vmax" style="margin: 2vmax 0.5vmax;" alt="Lucky Draw Image">
+               <img src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png" width="154vmax" height="126.2vmax" style="margin: 2vmax 0.5vmax;" alt="Lucky Draw Image">
 
                <p>Thank you for participating!</p>
                <p><b>LINK:</b> <a href="https://navbharatniwas.in/draw/${luckyDraw._id}" style="color: #3498db; text-decoration: none; font-size: 1.2vmax;">Click here to view your application</a></p>

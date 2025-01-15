@@ -166,7 +166,7 @@ const text = `
   
   <!-- Add the image with src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png", width 19vmax, height 7.2vmax, margin 2vmax 0.5vmax -->
   <div style="margin: 2vmax 0.5vmax;">
-    <img src="${tp}" alt="Lucky Draw" width="19vmax" height="7.2vmax" style="margin: 2vmax 0.5vmax;"/>
+    <img src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png" alt="Lucky Draw" width="19vmax" height="7.2vmax" style="margin: 2vmax 0.5vmax;"/>
   </div>
 
   <p style="margin-top: 30px;">

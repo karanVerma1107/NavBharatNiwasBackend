@@ -7,6 +7,7 @@ import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
 import moment from 'moment';
 import FAQ from "../DataModels/FAQ.js";
+import tp from './trans.png'
 import IsAllow from "../DataModels/allowForm.js";
 
 cloudinary.config({
@@ -96,21 +97,98 @@ export const createForm = asyncHandler(async (req, res, next) => {
 
             await isAllowDoc.save().then(console.log('isallow now,', isAllowDoc));
 
-            // Compose the email text
-            const text = `
-<p>Dear ${user.name},</p>
-<p>Your application for the Lucky Draw with ticket ID <b>${newForm._id}</b> has been submitted and is currently in <b>PENDING</b> state.</p>
-<p>To approve the application, please contact: <b>+917531027943</b></p>
-<p><b>LINK:</b> <a href="https://navbharatniwas.in/draw/${newForm._id}">Click here to view your application</a></p>
-<p>Thank you for participating!</p>
+           // Compose the email text with better formatting, user details, and an image
+const text = `
+<div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; font-size: 1.2vmax;">
+  <h2 style="color: #2c3e52;">Dear ${newForm.name},</h2>
+  <p style="font-size: 1.2vmax;">
+    Thank you for submitting your application for the Lucky Draw. We have successfully received your application, and it is currently in <strong>PENDING</strong> state. Our team will review it shortly.
+  </p>
+  
+  <h3 style="color: #2c3e52;">Your Application Details:</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+    <tr>
+      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Name:</td>
+      <td style="padding: 8px;">${newForm.name}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Phone Number:</td>
+      <td style="padding: 8px;">${newForm.phoneNo}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Occupation:</td>
+      <td style="padding: 8px;">${newForm.occupation}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Father's Name:</td>
+      <td style="padding: 8px;">${newForm.fatherName}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Adhaar Number:</td>
+      <td style="padding: 8px;">${newForm.AdhaarNo}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">PAN Number:</td>
+      <td style="padding: 8px;">${newForm.PANno}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Address:</td>
+      <td style="padding: 8px;">${newForm.address}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Date of Birth:</td>
+      <td style="padding: 8px;">${newForm.DOB}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Nationality:</td>
+      <td style="padding: 8px;">${newForm.nationality}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Project:</td>
+      <td style="padding: 8px;">${newForm.project}</td>
+    </tr>
+  </table>
+  
+  <p style="font-size: 1.2vmax; margin-top: 20px;">
+    To approve your application, please contact us at: <strong>+917531027943</strong>
+  </p>
+
+  <p style="font-size: 1.2vmax;">
+    For any inquiries, you can also reach us at: <strong>+919971488477</strong>
+  </p>
+  
+  <p style="font-size: 1.2vmax;">
+    You can view your application details at any time by clicking the link below:
+  </p>
+  
+  <p>
+    <a href="https://navbharatniwas.in/draw/${newForm._id}" style="color: #3498db; text-decoration: none; font-size: 1.2vmax;">
+      <strong>Click here to view your application</strong>
+    </a>
+  </p>
+  
+  <!-- Add the image with src={tp}, width 19vmax, height 7.2vmax, margin 2vmax 0.5vmax -->
+  <div style="margin: 2vmax 0.5vmax;">
+    <img src="${tp}" alt="Lucky Draw" width="19vmax" height="7.2vmax" style="margin: 2vmax 0.5vmax;"/>
+  </div>
+
+  <p style="margin-top: 30px;">
+    Thank you for participating in the Lucky Draw! We wish you the best of luck.
+  </p>
+
+  <footer style="font-size: 1vmax; color: #777;">
+    <p>Nav Bharat Niwas</p>
+    <p>For any inquiries, contact us at: support@navbharatniwas.in</p>
+  </footer>
+</div>
 `;
 
-            // Send email to the user
-            await sendEmail({
-                email: user.email,
-                subject: 'Application Form PENDING State Submitted',
-                html: text // Use the html field to send HTML content
-            });
+await sendEmail({
+  email: newForm.email,  // Email from the new form
+  subject: 'Application Form PENDING State Submitted',
+  html: text // Use the html field to send HTML content
+});
+
 
             res.status(201).json({
                 success: true,
@@ -348,20 +426,42 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
             }
         }
 
-        // Compose the email text
-        const subject = `Your LuckyDraw form has been ${newStatus}`;
-        const text = `Dear ${luckyDrawUser.name},<br><br>
-Your application for the LuckyDraw with ticket_id: <b>${luckyDraw._id}</b> has been <b>${newStatus}</b>.<br><br>
-Thank you for participating!<br><br>
-<b>LINK:</b> <a href="https://navbharatniwas.in/draw/${luckyDraw._id}">https://navbharatniwas.in/draw/${luckyDraw._id}</a>`;
+       // Compose the email content
+       const subject = `Your LuckyDraw form has been ${newStatus}`;
+       const text = `
+           <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px;">
+               <h2 style="color: #2c3e52;">Dear ${luckyDrawUser.name},</h2>
+               <p>Your application for the LuckyDraw with ticket ID: <b>${luckyDraw._id}</b> has been <b>${newStatus}</b>.</p>
 
+               <h3>Application Details:</h3>
+               <p><b>Name:</b> ${luckyDraw.name}</p>
+               <p><b>Phone Number:</b> ${luckyDraw.phoneNo}</p>
+               <p><b>Occupation:</b> ${luckyDraw.occupation}</p>
+               <p><b>Father's Name:</b> ${luckyDraw.fatherName}</p>
+               <p><b>Aadhaar Number:</b> ${luckyDraw.AdhaarNo}</p>
+               <p><b>PAN Number:</b> ${luckyDraw.PANno}</p>
+               <p><b>Address:</b> ${luckyDraw.address}</p>
+               <p><b>Date of Birth:</b> ${luckyDraw.DOB}</p>
+               <p><b>Nationality:</b> ${luckyDraw.nationality}</p>
+               <p><b>Project:</b> ${luckyDraw.project}</p>
 
-        // Send an email to the user notifying them of the approval/rejection
-        await sendEmail({
-            email: luckyDrawUser.email,
-            subject,
-            html: text // Use the html field to send HTML content
-        });
+               <p style="font-size: 1.2vmax;">
+                   In the event that you are not allotted a prize, we want to assure you that the full amount you contributed to the Lucky Draw will be refunded.
+               </p>
+
+               <img src="https://your-image-path.com/tp.jpg" width="19vmax" height="7.2vmax" style="margin: 2vmax 0.5vmax;" alt="Lucky Draw Image">
+
+               <p>Thank you for participating!</p>
+               <p><b>LINK:</b> <a href="https://navbharatniwas.in/draw/${luckyDraw._id}" style="color: #3498db; text-decoration: none; font-size: 1.2vmax;">Click here to view your application</a></p>
+           </div>
+       `;
+
+       // Send an email to the user notifying them of the approval/rejection
+       await sendEmail({
+           email: luckyDrawUser.email,
+           subject,
+           html: text // Use the html field to send HTML content
+       });
 
         res.status(200).json({
             success: true,

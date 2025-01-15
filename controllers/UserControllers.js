@@ -6,6 +6,7 @@ import asyncHandler from "../middleware/helper/asyncHandler.js";
 import sendEmail from "../middleware/helper/sendEmail.js";
 import fs from 'fs';    
 import LuckyDraw from "../DataModels/LuckyDraw.js";
+import tp from './trans.png'
 
 cloudinary.config({
     cloud_name: "dwpdxuksp",
@@ -81,15 +82,16 @@ export const otpSendToVerify = asyncHandler(async (req, res, next) => {
         });
 
         
-
-        // Compose the OTP email text
-        const text = `Your OTP for sign-up in Nav-Bharat-Niwas with Name: ${tempUser.name} is: ${otp}`;
+        const text = `
+        <p>Your OTP for sign-up in Nav-Bharat-Niwas with Name: ${tempUser.name} is: ${otp}</p>
+        <img src="${tp}" width="19vmax" height="7.2vmax" style="margin: 2vmax;"  />
+      `;
 
         // Send OTP email to the user
         await sendEmail({
             email: tempUser.email,
             subject: 'Nav-Bharat-Niwas Verification for Sign-Up',
-            text
+            html: text
         });
 
         // Save the temporary user document
@@ -185,14 +187,17 @@ export const sendLoginOtp = asyncHandler(async (req, res, next) => {
         // Save the user document with the OTP information
         await user.save();
 
-        // Compose the OTP email text
-        const text = `Your OTP for login to Nav-Bharat-Niwas is: ${Otp}. This OTP is valid for 10 minutes.`;
+       // HTML content with the embedded image and margin
+const text = `
+<p>Your OTP for login to Nav-Bharat-Niwas is: ${Otp}. This OTP is valid for 10 minutes.</p>
+<img src="https://example.com/path/to/image.png" width="19vmax" height="7.2vmax" style="margin: 2vmax;" />
+`;
 
         // Send the OTP email to the user
         await sendEmail({
             email: user.email,
             subject: 'Nav-Bharat-Niwas Login OTP',
-            text
+            html: text
         });
 
         // Respond with a success message

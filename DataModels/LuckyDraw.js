@@ -59,6 +59,9 @@ const luckyDrawSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  allotment:{
+    type:String
+  }
 }, {
   timestamps: true // Automatically adds createdAt and updatedAt fields
 });

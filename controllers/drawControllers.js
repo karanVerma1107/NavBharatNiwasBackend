@@ -416,6 +416,24 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
                     await luckyDrawUser.save();
                 }
             }
+
+            // Delete the LuckyDraw image from Cloudinary (if it exists)
+            if (luckyDraw.image) {
+                const cloudinary = require('cloudinary').v2;
+
+                // Delete the image from Cloudinary using its public_id
+                await cloudinary.uploader.destroy(luckyDraw.image.public_id, (error, result) => {
+                    if (error) {
+                        console.log('Error deleting image from Cloudinary:', error);
+                    } else {
+                        console.log('Image deleted from Cloudinary:', result);
+                    }
+                });
+            }
+
+            // Delete the LuckyDraw document from the database
+            await luckyDraw.remove();
+            console.log('LuckyDraw document deleted');
         }
 
         // If the action is approve, push the latest IsAllow document ID to the user's history
@@ -454,8 +472,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
                <img src="https://navbharatniwasbackend.onrender.com/uploads/images/00.jpg" width="194vmax" height="126.2vmax" style="margin: 2vmax 0.5vmax;" alt="Lucky Draw Image">
 
                <p>Thank you for participating!</p>
-               <p><b>LINK:</b> <a href="https://navbharatniwas.in/draw/${luckyDraw._id}" style="color: #3498db; text-decoration: none; font-size: 1.2vmax;">Click here to view your application</a></p>
-           </div>
+             
        `;
 
        // Send an email to the user notifying them of the approval/rejection
@@ -475,6 +492,14 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });
+
+
+
+
+
+
+
+
 
 
 
@@ -670,10 +695,12 @@ export const getLuckyDrawById = asyncHandler(async (req, res, next) => {
   
 
 
-  
-  export const pushIdToResult = asyncHandler(async (req, res, next) => {
-    const { id } = req.params; // Get the ID from the request params
 
+
+  // Push ID to the result array and update the allotment in LuckyDraw
+export const pushIdToResult = asyncHandler(async (req, res, next) => {
+    const { Lid,  allot } = req.params; // Get 'Lid', 'id', and 'allot' from the request params
+    
     try {
         // Find the latest 'IsAllow' document based on the 'createdAt' field (most recent one)
         const latestIsAllow = await IsAllow.findOne().sort({ createdAt: -1 });
@@ -683,29 +710,41 @@ export const getLuckyDrawById = asyncHandler(async (req, res, next) => {
             return next(new ErrorHandler('No active IsAllow form found', 404));
         }
 
-        // Check if the provided ID is already in the result array to avoid duplicates
-        if (latestIsAllow.result.includes(id)) {
+        // Check if the provided 'id' is already in the result array to avoid duplicates
+        if (latestIsAllow.result.includes(Lid)) {
             return next(new ErrorHandler(`ID ${id} is already in the result array`, 400));
         }
 
-        // Push the provided ID to the 'result' array in the latest IsAllow document
-        latestIsAllow.result.push(id);
+        // Push the provided 'id' to the 'result' array in the latest IsAllow document
+        latestIsAllow.result.push(Lid);
 
         // Save the updated 'IsAllow' document
         await latestIsAllow.save();
 
+        // Find the LuckyDraw document by 'Lid'
+        const luckyDraw = await LuckyDraw.findById(Lid);
+        if (!luckyDraw) {
+            return next(new ErrorHandler('LuckyDraw not found', 404));
+        }
+
+        // Update the allotment field of the LuckyDraw document
+        luckyDraw.allotment = allot; // allot is a string, ensure this is correct
+        await luckyDraw.save(); // Save the updated LuckyDraw document
+
         // Send a success message
         res.status(200).json({
             success: true,
-            message: `Successfully pushed ${id} to result`,
-            
+            message: `Successfully pushed ${Lid} to result and updated the allotment for LuckyDraw ${Lid}`,
         });
 
     } catch (error) {
-        console.log('Error while pushing to result:', error);
+        console.log('Error while pushing to result and updating allotment:', error);
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });
+
+
+
 
 
 
@@ -723,13 +762,22 @@ export const checkFormAndFetchResults = async (req, res) => {
             return res.status(404).json({ message: "Form not found." }); // Form not found
         }
 
-        const currentDate = moment(); // Get today's date
+        const currentDate = moment(); // Get today's date and time
         const formOpeningDate = moment(form.formOpeningDate); // Convert formOpeningDate to moment object
+
+        // Set 7 PM on the formOpeningDate to check if it's after or before
+        const formOpeningDateAt7PM = formOpeningDate.set({ hour: 19, minute: 0, second: 0, millisecond: 0 });
 
         // Check if the form is not open yet
         if (formOpeningDate.isAfter(currentDate)) {
             const daysRemaining = formOpeningDate.diff(currentDate, 'days'); // Calculate days remaining
             return res.json({ message: `Wait for ${daysRemaining} day(s) until the form opens.` });
+        }
+
+        // Check if it's before 7 PM on the opening day
+        if (currentDate.isBefore(formOpeningDateAt7PM)) {
+            const hoursRemaining = formOpeningDateAt7PM.diff(currentDate, 'hours'); // Calculate hours remaining
+            return res.json({ message: `Wait for ${hoursRemaining} hour(s) until 7 PM to view the results.` });
         }
 
         // If the form is open or the opening date is today or in the past, fetch the LuckyDraws in the result array
@@ -746,8 +794,6 @@ export const checkFormAndFetchResults = async (req, res) => {
         return res.status(500).json({ message: "An error occurred while processing the request." });
     }
 };
-
-
 
 
 

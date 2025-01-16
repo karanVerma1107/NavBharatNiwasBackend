@@ -22,7 +22,7 @@ Srouter.route('/searchDraw/:id').get(isAuthenticatedUser,searchLuckyDrawById)
 Srouter.route('/draw/:id').get(isAuthenticatedUser,getLuckyDrawById);
 Srouter.route('/update-draw-status').put(isAuthenticatedUser,updateLuckyDrawStatus);
 Srouter.route('/getAlldraws').get(isAuthenticatedUser,getLuckyDraws);
-Srouter.route('/pass/:id').put(isAuthenticatedUser, pushIdToResult);
+Srouter.route('/pass/:Lid/:allot').put(isAuthenticatedUser, pushIdToResult);
 Srouter.route('/history').get(isAuthenticatedUser,updateUserHistory);
 Srouter.route('/fill-form').post(createFaa);
 Srouter.route('/result/:formId').get(isAuthenticatedUser,checkFormAndFetchResults);

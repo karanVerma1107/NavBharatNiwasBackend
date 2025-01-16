@@ -423,7 +423,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
 
 
             // Delete the LuckyDraw document from the database
-            await luckyDraw.remove();
+            await luckyDraw.deleteOne();
             console.log('LuckyDraw document deleted');
         }
 

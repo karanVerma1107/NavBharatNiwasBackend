@@ -37,7 +37,8 @@ const generateAndsaveTokens = async(user, res)=>{
                 secure: true,
                 sameSite: 'None',
                 expires: new Date( Date.now() + 15*24*60*60*1000 ),
-                path:'/'
+                path:'/',
+                domain: '.navbharatniwas.in'
 
             }
         )

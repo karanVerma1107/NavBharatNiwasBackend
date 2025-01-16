@@ -416,20 +416,11 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
                     await luckyDrawUser.save();
                 }
             }
-
+     
             // Delete the LuckyDraw image from Cloudinary (if it exists)
-            if (luckyDraw.image) {
-                const cloudinary = require('cloudinary').v2;
+            const imagePublicId = luckyDraw.image.split('/').pop().split('.')[0]; // Assuming URL structure
+            await cloudinary.uploader.destroy(imagePublicId);
 
-                // Delete the image from Cloudinary using its public_id
-                await cloudinary.uploader.destroy(luckyDraw.image.public_id, (error, result) => {
-                    if (error) {
-                        console.log('Error deleting image from Cloudinary:', error);
-                    } else {
-                        console.log('Image deleted from Cloudinary:', result);
-                    }
-                });
-            }
 
             // Delete the LuckyDraw document from the database
             await luckyDraw.remove();

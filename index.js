@@ -13,11 +13,16 @@ dotenv.config({ path: 'o.env' });
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Set allowed origins (both with and without www)
+const allowedOrigins = [
+  'https://navbharatniwas.in',
+  'https://www.navbharatniwas.in'
+];
 
-const allowedOrigins = ['https://navbharatniwas.in', 'https://www.navbharatniwas.in'];
-
+// CORS configuration
 app.use(cors({
   origin: (origin, callback) => {
+    // Allow requests from both the domains and no origin (for localhost testing)
     if (allowedOrigins.includes(origin) || !origin) {
       callback(null, true);
     } else {
@@ -29,12 +34,22 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+// Dynamic CORS middleware to handle setting headers
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', req.headers.origin); // Dynamically set the origin from the request header
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    next();
+});
+
+// Middleware to parse JSON bodies
 app.use(express.json());
 app.use(cookieParser());
 
 // Define the path to the 'uploads' folder
 const __filename = fileURLToPath(import.meta.url); // Get the file name
-const __dirname = path.dirname(__filename); // Get the directory name
+const _dirname = path.dirname(_filename); // Get the directory name
 
 // Ensure the uploads folder is in the correct location
 const uploadPath = path.join(__dirname, 'uploads');
@@ -42,9 +57,10 @@ const uploadPath = path.join(__dirname, 'uploads');
 // Serve files from the 'uploads' directory as static files
 app.use('/uploads', express.static(uploadPath));
 
+// Connect to the database
 connectDB();
 
-// Basic route
+// Basic route to test if server is working
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
@@ -56,6 +72,7 @@ app.use('/api/v1', Urouter);
 import Srouter from './routes/SiteRoute.js';
 app.use('/api/v1', Srouter);
 
+// Error handler middleware
 app.use(errorHandler);
 
 // Start the server

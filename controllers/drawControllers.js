@@ -457,10 +457,10 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
                <p><b>Project:</b> ${luckyDraw.project}</p>
 
                <p style="font-size: 1.2vmax;">
-                   In the event that you are not allotted a prize, we want to assure you that the full amount you contributed to the Lucky Draw will be refunded.
+                   This amount is 100% refundable in case of no allotment under this scheme.
                </p>
 
-               <img src="https://navbharatniwasbackend.onrender.com/uploads/images/00.jpg" width="194vmax" height="126.2vmax" style="margin: 2vmax 0.5vmax;" alt="Lucky Draw Image">
+               <img src="https://navbharatniwasbackend.onrender.com/uploads/images/oo.jpg" width="194vmax" height="126.2vmax" style="margin: 2vmax 0.5vmax;" alt="Lucky Draw Image">
 
                <p>Thank you for participating!</p>
              

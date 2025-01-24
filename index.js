@@ -27,18 +27,6 @@ app.use(express.json());
 app.use(cookieParser());
 
 
-// Configure session middleware (session storage)
-app.use(session({
-  secret: 'R@nd0m$tr1ngForSession!$Secure#Key98765', 
-  resave: false, // Don't save session if not modified
-  saveUninitialized: false, // Don't create session until something is stored
-  cookie: {
-    httpOnly: true, // Prevent client-side JS from accessing the session cookie
-    secure: true, // Set to true for HTTPS in production
-    sameSite: 'None', // Allow cross-origin cookies if needed (for cross-site requests)
-    maxAge: 15 * 24 * 60 * 60 * 1000, // Optional: Set expiration time for the session (same as cookie expiration)
-  }
-}));
 
 
 // Define the path to the 'uploads' folder

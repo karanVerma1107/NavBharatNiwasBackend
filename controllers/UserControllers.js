@@ -7,8 +7,7 @@ import sendEmail from "../middleware/helper/sendEmail.js";
 import fs from 'fs';    
 import LuckyDraw from "../DataModels/LuckyDraw.js";
 import session from "express-session";
-import {UAParser} from "ua-parser-js";
-
+import { Domain } from "domain";
 
 cloudinary.config({
     cloud_name: "dwpdxuksp",
@@ -23,51 +22,47 @@ const generateOTP = ()=>{
 
 
 
-const generateAndsaveTokens = async (user, res, req) => {
-    console.log("Generating and saving tokens...");
+//generate and save tokens 
+const generateAndsaveTokens = async(user, res)=>{
+    console.log("chlra hu")
     try {
-        // Generate the refresh token
         const refreshToken = user.generateRefreshToken();
         user.refreshToken = refreshToken;
-        
+
         await user.save();
 
-        // Generate the access token
-        const accessToken = await user.generateAccessToken();
 
-        // Use UAParser to parse the user-agent string
-        const parser = new UAParser();
-        const result = parser.getResult();
-        const { device, browser } = result;
+        const accessToken =  await user.generateAccessToken();
+        
+        res.cookie('accessToken',
+            accessToken,{
+                httpOnly: true,
+                secure: true,
+                sameSite: 'None',
+                expires: new Date( Date.now() + 15*24*60*60*1000 ),
+                domain: '.navbharatniwas.in',
+                path:'/',
+                
 
-        // Check if the device is an iPhone or the browser is Safari
-        const isIphone = device.type === 'mobile' && /iPhone/i.test(device.model);
-        const isSafari = browser.name === 'Safari' && !/Chrome/i.test(browser.name);
+            }
+        )
 
-        if (isIphone || isSafari) {
-            // For iPhone or Safari, store the accessToken in the session (server-side)
-            req.session.accessToken = accessToken;  // Store in session
-            req.session.save(() => {
-                console.log('Stored accessToken in session for iPhone/Safari');
-            });
-        } else {
-            // For other devices (Android, Windows, Chrome, etc.), store the accessToken in cookies
-            res.cookie('accessToken', accessToken, {
-                httpOnly: true,  // Prevent client-side JavaScript access
-                secure: true,    // Only for HTTPS connections
-                sameSite: 'None',  // For cross-origin requests
-                expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),  // 15 days expiration
-                path: '/',
-            });
-            console.log('Stored accessToken in cookies for other devices');
-        }
+        console.log('refreshToken: ', refreshToken);
+        console.log('accessToken: ', accessToken);
 
-        return { refreshToken, accessToken };
+        return {refreshToken, accessToken};
+
+
     } catch (error) {
-        console.log('Error generating tokens:', error);
-        throw new Error('Error in generating tokens');
+        console.log('error of token is:', error)
+        throw new Error('error in generating tokens')
     }
 };
+
+
+
+
+
 
 
 

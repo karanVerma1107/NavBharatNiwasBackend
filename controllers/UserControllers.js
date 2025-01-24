@@ -30,7 +30,7 @@ const generateAndsaveTokens = async (user, res, req) => {
   
       const accessToken = await user.generateAccessToken();
   
-      const userAgent = req.headers['user-agent'];
+      const userAgent = req.get('User-Agent');
   
       // Check if the device is an iPhone or the browser is Safari
       const isIphone = /iPhone/i.test(userAgent);  // Check for iPhone
@@ -64,6 +64,8 @@ const generateAndsaveTokens = async (user, res, req) => {
       throw new Error('Error in generating tokens');
     }
   };
+
+
 
 
 

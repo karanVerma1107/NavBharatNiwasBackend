@@ -22,12 +22,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://www.navbharatniwas.in'); // Dynamically set the origin from the request header
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  next();
+});
+
 // Middleware to parse JSON bodies
 app.use(express.json());
 app.use(cookieParser());
-
-
-
 
 // Define the path to the 'uploads' folder
 const __filename = fileURLToPath(import.meta.url); // Get the file name

@@ -7,7 +7,7 @@ import sendEmail from "../middleware/helper/sendEmail.js";
 import fs from 'fs';    
 import LuckyDraw from "../DataModels/LuckyDraw.js";
 import session from "express-session";
-import UAParser from "ua-parser-js";
+import {UAParser} from "ua-parser-js";
 
 
 cloudinary.config({

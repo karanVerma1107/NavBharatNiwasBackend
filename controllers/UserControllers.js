@@ -6,7 +6,7 @@ import asyncHandler from "../middleware/helper/asyncHandler.js";
 import sendEmail from "../middleware/helper/sendEmail.js";
 import fs from 'fs';    
 import LuckyDraw from "../DataModels/LuckyDraw.js";
-
+import session from "express-session";
 
 cloudinary.config({
     cloud_name: "dwpdxuksp",
@@ -19,41 +19,52 @@ const generateOTP = ()=>{
     return Math.floor(100000 + Math.random()*900000).toString();
 }
 
-//generate and save tokens 
-const generateAndsaveTokens = async(user, res)=>{
-    console.log("chlra hu")
+
+const generateAndsaveTokens = async (user, res, req) => {
+    console.log("Generating and saving tokens...");
     try {
-        const refreshToken = user.generateRefreshToken();
-        user.refreshToken = refreshToken;
-
-        await user.save();
-
-
-        const accessToken =  await user.generateAccessToken();
-        
-        res.cookie('accessToken',
-            accessToken,{
-                httpOnly: true,
-                secure: true,
-                sameSite: 'None',
-                expires: new Date( Date.now() + 15*24*60*60*1000 ),
-                path:'/',
-                
-
-            }
-        )
-
-        console.log('refreshToken: ', refreshToken);
-        console.log('accessToken: ', accessToken);
-
-        return {refreshToken, accessToken};
-
-
+      const refreshToken = user.generateRefreshToken();
+      user.refreshToken = refreshToken;
+  
+      await user.save();
+  
+      const accessToken = await user.generateAccessToken();
+  
+      const userAgent = req.headers['user-agent'];
+  
+      // Check if the device is an iPhone or the browser is Safari
+      const isIphone = /iPhone/i.test(userAgent);  // Check for iPhone
+      const isSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);  // Check for Safari browser
+  
+      if (isIphone || isSafari) {
+        // For iPhone or Safari, store the accessToken in the session (server-side)
+        req.session.accessToken = accessToken;  // Store in session
+        req.session.save(() => {
+          console.log('Stored accessToken in session for iPhone/Safari');
+        });
+  
+       
+      } else {
+        // For other devices (Android, Windows, Chrome, etc.), store the accessToken in cookies
+        res.cookie('accessToken', accessToken, {
+          httpOnly: true,  // Prevent client-side JavaScript access
+          secure: true,    // Only for HTTPS connections
+          sameSite: 'None',  // For cross-origin requests
+          expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),  // 15 days expiration
+          path: '/',
+        });
+  
+        console.log('Stored accessToken in cookies for other devices');
+       
+      }
+  
+      return { refreshToken, accessToken };
     } catch (error) {
-        console.log('error of token is:', error)
-        throw new Error('error in generating tokens')
+      console.log('Error generating tokens:', error);
+      throw new Error('Error in generating tokens');
     }
-};
+  };
+
 
 
 // OTP Send for Signup

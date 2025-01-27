@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import connectDB from './connectionDB.js';
 import errorHandler from './middleware/errorHandler.js';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
+
 import path from 'path';
 import session from 'express-session';
 
@@ -32,10 +32,6 @@ app.use((req, res, next) => {
 });
 
 
-const options = {
-  key: fs.readFileSync('/etc/letsencrypt/live/navbharatniwas.in/privkey.pem'),
-  cert: fs.readFileSync('/etc/letsencrypt/live/navbharatniwas.in/fullchain.pem')
-};
 
 
 // Middleware to parse JSON bodies

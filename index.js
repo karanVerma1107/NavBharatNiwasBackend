@@ -48,7 +48,7 @@ app.use('/uploads', express.static(uploadPath));
 connectDB();
 
 // Basic route to test if server is working
-app.get('/', (req, res) => {
+app.get('/hello', (req, res) => {
   res.send('Hello World!');
 });
 

@@ -15,16 +15,39 @@ dotenv.config({ path: 'o.env' });
 const app = express();
 const port = process.env.PORT || 3000;
 
-// CORS configuration to only accept requests from https://www.navbharatniwas.in
+
+const allowedOrigins = [
+  'https://www.navbharatniwas.in', // Allow HTTPS with www
+  'https://navbharatniwas.in'      // Allow HTTPS without www
+];
+
 app.use(cors({
-  origin: 'https://www.navbharatniwas.in',  // Hardcode the allowed origin
+  origin: function(origin, callback) {
+    // Check if the incoming origin is in the allowed origins list
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true); // Allow the request
+    } else {
+      callback(new Error('Not allowed by CORS'), false); // Reject the request
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://www.navbharatniwas.in'); // Dynamically set the origin from the request header
+  const allowedOrigins = [
+    'https://www.navbharatniwas.in',
+    'https://navbharatniwas.in'
+  ];
+
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+    res.header('Access-Control-Allow-Origin', origin); // Dynamically set the origin
+  }
+  
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');

@@ -5,9 +5,9 @@ import cookieParser from 'cookie-parser';
 import connectDB from './connectionDB.js';
 import errorHandler from './middleware/errorHandler.js';
 import { fileURLToPath } from 'url';
-
 import path from 'path';
-import session from 'express-session';
+import https from 'https';  // Import https module
+import fs from 'fs';  // Import fs module to read certificate files
 
 // Load environment variables from .env file
 dotenv.config({ path: 'o.env' });
@@ -30,9 +30,6 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   next();
 });
-
-
-
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -66,7 +63,18 @@ app.use('/api/v1', Srouter);
 // Error handler middleware
 app.use(errorHandler);
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/navbharatniwas.in/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/navbharatniwas.in/cert.pem', 'utf8');
+const ca = fs.readFileSync('/etc/letsencrypt/live/navbharatniwas.in/chain.pem', 'utf8');
+
+const credentials = {
+  key: privateKey,
+  cert: certificate,
+  ca: ca, // Optional, depending on your setup
+};
+
+
+// Start the HTTPS server
+https.createServer(credentials, app).listen(3008, () => {
+  console.log('HTTPS server running on port 3008');
 });

@@ -468,7 +468,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
 
        // Send an email to the user notifying them of the approval/rejection
        await sendEmail({
-           email: user.email,
+           email: luckyDrawUser.email,
            subject,
            html: text // Use the html field to send HTML content
        });

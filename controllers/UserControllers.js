@@ -177,6 +177,8 @@ export const verifyOtpAndCreateAccount = asyncHandler(async (req, res, next) => 
 });
 
 
+
+
 //login otp send
 export const sendLoginOtp = asyncHandler(async (req, res, next) => {
     const { email } = req.body;  // Get the email from the request body

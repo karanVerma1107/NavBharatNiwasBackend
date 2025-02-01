@@ -7,6 +7,7 @@ import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
 import moment from 'moment';
 import FAQ from "../DataModels/FAQ.js";
+import Companyfill from "../DataModels/CompanyFill.js";
 
 import IsAllow from "../DataModels/allowForm.js";
 
@@ -16,10 +17,33 @@ cloudinary.config({
     api_secret: "ejsJOwHcdFugMNDFy88WXPtPMd8"
 });
 
+
+
 // Create a new form
 export const createForm = asyncHandler(async (req, res, next) => {
-    const { name, phoneNo, occupation, fatherName, AdhaarNo, PANno, address, DOB, nationality, project } = req.body;
-    const image = req.file; // Assuming single image upload
+
+    
+    const { 
+        name, 
+        phoneNo, 
+        occupation, 
+        fatherName, 
+        AdhaarNo, 
+        PANno, 
+        address, 
+        DOB, 
+        nationality, 
+        project, 
+        paymentPlan // Ensure paymentPlan is passed in the request body
+    } = req.body;
+    
+    // Correctly accessing the uploaded files from req.files
+    const image = req.files?.image ? req.files.image[0] : null;  // Profile image
+    const adhaarPhoto = req.files?.adhaarPhoto ? req.files.adhaarPhoto[0] : null; // Aadhaar image
+    const panPhoto = req.files?.panPhoto ? req.files.panPhoto[0] : null; // PAN image
+
+    console.log('req.body', req.body);
+    console.log('req.files', req.files);
 
     try {
         // Get user ID from req.user
@@ -35,9 +59,14 @@ export const createForm = asyncHandler(async (req, res, next) => {
             return next(new ErrorHandler('User not found', 404));
         }
 
-        // Check if image was uploaded
+        // Check if profile image was uploaded
         if (!image) {
-            return next(new ErrorHandler('No image uploaded for the form', 400));
+            return next(new ErrorHandler('No profile image uploaded for the form', 400));
+        }
+
+        // Check if Aadhaar and PAN images are uploaded
+        if (!adhaarPhoto || !panPhoto) {
+            return next(new ErrorHandler('No Aadhaar or PAN image uploaded for the form', 400));
         }
 
         // Fetch the latest IsAllow document to check if the form is enabled and open
@@ -56,20 +85,28 @@ export const createForm = asyncHandler(async (req, res, next) => {
 
         // If the opening date is later than today, allow the user to fill the form
         if (today < openingDate) {
-            // Upload image to Cloudinary
-            const result = await cloudinary.uploader.upload(image.path);
-            const imageUrl = result.secure_url; // Store the Cloudinary URL
+            // Upload images to Cloudinary
+            const profileImageResult = await cloudinary.uploader.upload(image.path);
+            const profileImageUrl = profileImageResult.secure_url;
 
-            // Delete local file after upload to Cloudinary
-            fs.unlink(image.path, (err) => {
-                if (err) {
-                    console.error(`Failed to delete file: ${image.path}`, err);
-                } else {
-                    console.log(`File deleted from local server: ${image.path}`);
-                }
+            const adhaarPhotoResult = await cloudinary.uploader.upload(adhaarPhoto.path); // Upload Aadhaar photo
+            const adhaarPhotoUrl = adhaarPhotoResult.secure_url;
+
+            const panPhotoResult = await cloudinary.uploader.upload(panPhoto.path); // Upload PAN photo
+            const panPhotoUrl = panPhotoResult.secure_url;
+
+            // Delete local files after upload to Cloudinary
+            [image, adhaarPhoto, panPhoto].forEach(file => {
+                fs.unlink(file.path, (err) => {
+                    if (err) {
+                        console.error(`Failed to delete file: ${file.path}`, err);
+                    } else {
+                        console.log(`File deleted from local server: ${file.path}`);
+                    }
+                });
             });
 
-            // Create a new form with additional fields: DOB, nationality, and project
+            // Create a new form with all the necessary fields
             const newForm = new LuckyDraw({
                 userId,
                 name,
@@ -77,13 +114,16 @@ export const createForm = asyncHandler(async (req, res, next) => {
                 occupation,
                 fatherName,
                 AdhaarNo,
+                adhaarPhoto: adhaarPhotoUrl,  // Store the Cloudinary URL for Aadhaar photo
                 PANno,
+                panPhoto: panPhotoUrl,        // Store the Cloudinary URL for PAN photo
                 address,
                 DOB,               // Added DOB
                 nationality,       // Added nationality
                 project,           // Added project
+                paymentPlan,
                 openingDate,
-                image: imageUrl // Store the Cloudinary URL in the form
+                image: profileImageUrl // Store the Cloudinary URL for profile image
             });
 
             // Save the form
@@ -94,102 +134,98 @@ export const createForm = asyncHandler(async (req, res, next) => {
             await user.save();
 
             isAllowDoc.luckydraw.push(newForm._id);
-
             await isAllowDoc.save().then(console.log('isallow now,', isAllowDoc));
 
-           // Compose the email text with better formatting, user details, and an image
-const text = `
-<div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; font-size: 1.2vmax;">
-  <h2 style="color: #2c3e52;">Dear ${newForm.name},</h2>
-  <p style="font-size: 1.2vmax;">
-    Thank you for submitting your application for the Lucky Draw. We have successfully received your application, and it is currently in <strong>PENDING</strong> state. Our team will review it shortly.
-  </p>
-  
-  <h3 style="color: #2c3e52;">Your Application Details:</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-  <tr>
-      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Ticket ID:</td>
-      <td style="padding: 8px;">${newForm._id}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Name:</td>
-      <td style="padding: 8px;">${newForm.name}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Phone Number:</td>
-      <td style="padding: 8px;">${newForm.phoneNo}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Occupation:</td>
-      <td style="padding: 8px;">${newForm.occupation}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Father's Name:</td>
-      <td style="padding: 8px;">${newForm.fatherName}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Adhaar Number:</td>
-      <td style="padding: 8px;">${newForm.AdhaarNo}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">PAN Number:</td>
-      <td style="padding: 8px;">${newForm.PANno}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Address:</td>
-      <td style="padding: 8px;">${newForm.address}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Date of Birth:</td>
-      <td style="padding: 8px;">${newForm.DOB}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Nationality:</td>
-      <td style="padding: 8px;">${newForm.nationality}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Project:</td>
-      <td style="padding: 8px;">${newForm.project}</td>
-    </tr>
-  </table>
-  
+            // Compose the email text with better formatting, user details, and an image
+            const text = `
+            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; font-size: 1.2vmax;">
+                <h2 style="color: #2c3e52;">Dear ${newForm.name},</h2>
+                <p style="font-size: 1.2vmax;">
+                    Thank you for submitting your application for the Lucky Draw. We have successfully received your application, and it is currently in <strong>PENDING</strong> state. Our team will review it shortly.
+                </p>
 
-  <p style="font-size: 1.2vmax;">
-    For any inquiries, you can also reach us at: <strong>+919971488477</strong>
-  </p>
-  
-  <p style="font-size: 1.2vmax;">
-    You can view your application details at any time by clicking the link below:
-  </p>
-  
-  <p>
-    <a href="https://navbharatniwas.in/draw/${newForm._id}" style="color: #3498db; text-decoration: none; font-size: 1.2vmax;">
-      <strong>Click here to view your application</strong>
-    </a>
-  </p>
-  
-  <!-- Add the image with src="https://navbharatniwasbackend.onrender.com/uploads/images/trans.png", width="154vmax" height="126.2vmax" margin 2vmax 0.5vmax -->
-  <div style="margin: 2vmax 0.5vmax;">
-    <img src="https://navbharatniwasbackend.onrender.com/uploads/images/oo.jpg" alt="Lucky Draw" width="194vmax" height="126.3vmax" style="margin: 2vmax 0.5vmax;"/>
-  </div>
+                <h3 style="color: #2c3e52;">Your Application Details:</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Ticket ID:</td>
+                        <td style="padding: 8px;">${newForm._id}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Name:</td>
+                        <td style="padding: 8px;">${newForm.name}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Phone Number:</td>
+                        <td style="padding: 8px;">${newForm.phoneNo}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Occupation:</td>
+                        <td style="padding: 8px;">${newForm.occupation}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Father's Name:</td>
+                        <td style="padding: 8px;">${newForm.fatherName}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Adhaar Number:</td>
+                        <td style="padding: 8px;">${newForm.AdhaarNo}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">PAN Number:</td>
+                        <td style="padding: 8px;">${newForm.PANno}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Address:</td>
+                        <td style="padding: 8px;">${newForm.address}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Date of Birth:</td>
+                        <td style="padding: 8px;">${newForm.DOB}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Nationality:</td>
+                        <td style="padding: 8px;">${newForm.nationality}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Project:</td>
+                        <td style="padding: 8px;">${newForm.project}</td>
+                    </tr>
+                </table>
 
-  <p style="margin-top: 30px;">
-    Thank you for participating in the Lucky Draw! We wish you the best of luck.
-  </p>
+                <p style="font-size: 1.2vmax;">
+                    For any inquiries, you can also reach us at: <strong>+919971488477</strong>
+                </p>
 
-  <footer style="font-size: 1vmax; color: #777;">
-    <p>Nav Bharat Niwas</p>
-    <p>For any inquiries, contact us at: support@navbharatniwas.in</p>
-  </footer>
-</div>
-`;
+                <p style="font-size: 1.2vmax;">
+                    You can view your application details at any time by clicking the link below:
+                </p>
 
-await sendEmail({
-  email: user.email,  // Email from the new form
-  subject: 'Application Form PENDING State Submitted',
-  html: text // Use the html field to send HTML content
-});
+                <p>
+                    <a href="https://navbharatniwas.in/draw/${newForm._id}" style="color: #3498db; text-decoration: none; font-size: 1.2vmax;">
+                        <strong>Click here to view your application</strong>
+                    </a>
+                </p>
 
+                <div style="margin: 2vmax 0.5vmax;">
+                    <img src="https://navbharatniwas.in:3008/uploads/images/oo.jpg" alt="Lucky Draw" width="194vmax" height="126.3vmax" style="margin: 2vmax 0.5vmax;"/>
+                </div>
+
+                <p style="margin-top: 30px;">
+                    Thank you for participating in the Lucky Draw! We wish you the best of luck.
+                </p>
+
+                <footer style="font-size: 1vmax; color: #777;">
+                    <p>Nav Bharat Niwas</p>
+                    <p>For any inquiries, contact us at: support@navbharatniwas.in</p>
+                </footer>
+            </div>
+            `;
+
+            await sendEmail({
+                email: user.email,  // Email from the new form
+                subject: 'Application Form PENDING State Submitted',
+                html: text // Use the html field to send HTML content
+            });
 
             res.status(201).json({
                 success: true,
@@ -205,6 +241,188 @@ await sendEmail({
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });
+
+
+
+
+
+
+
+
+export const createCompanyFill = asyncHandler(async (req, res, next) => {
+    const { 
+      companyName, 
+      authorizedSignatory, 
+      gstNumber, 
+      panNumber, 
+      companyAddress, 
+      authorizedSignatoryAddress, 
+      paymentPlan ,
+      project
+    } = req.body;
+  
+    // Access uploaded photos (passport and PAN photos)
+    const panPhoto = req.files?.panPhoto ? req.files.panPhoto[0] : null;
+    const passportPhoto = req.files?.passportPhoto ? req.files.passportPhoto[0] : null;
+  
+    console.log('req.body', req.body);
+    console.log('req.files', req.files);
+  
+    try {
+      // Get user ID from req.user
+      const userId = req.user._id;
+      if (!userId) {
+        return next(new ErrorHandler('Login to access this resource', 401));
+      }
+  
+      // Find the user by ID to get their email and name
+      const user = await User.findById(userId);
+      if (!user) {
+        return next(new ErrorHandler('User not found', 404));
+      }
+  
+      // Check if both photos are uploaded
+      if (!panPhoto || !passportPhoto) {
+        return next(new ErrorHandler('Both PAN and Passport photos are required', 400));
+      }
+  
+      // Upload the photos to Cloudinary
+      const panPhotoResult = await cloudinary.uploader.upload(panPhoto.path);
+      const passportPhotoResult = await cloudinary.uploader.upload(passportPhoto.path);
+  
+      const panPhotoUrl = panPhotoResult.secure_url;
+      const passportPhotoUrl = passportPhotoResult.secure_url;
+  
+      // Delete local files after upload to Cloudinary
+      [panPhoto, passportPhoto].forEach(file => {
+        fs.unlink(file.path, (err) => {
+          if (err) {
+            console.error(`Failed to delete file: ${file.path}`, err);
+          } else {
+            console.log(`File deleted from local server: ${file.path}`);
+          }
+        });
+      });
+  
+      // Create a new company fill document
+      const newCompany = new Companyfill({
+        companyName,
+        authorizedSignatory,
+        gstNumber,
+        panNumber,
+        panPhoto: panPhotoUrl,  // Store Cloudinary URL
+        companyAddress,
+        authorizedSignatoryAddress,
+        passportPhoto: passportPhotoUrl, // Store Cloudinary URL
+        paymentPlan,
+        project
+      });
+  
+      // Save the company fill document to the database
+      await newCompany.save();
+  
+      // Link the company fill form to IsAllow document
+      const isAllowDoc = await IsAllow.findOne().sort({ createdAt: -1 });
+      if (!isAllowDoc || !isAllowDoc.isEnabled) {
+        return next(new ErrorHandler('Form is not enabled yet', 403));
+      }
+  
+      // Push the new company fill ID to IsAllow document's companyFill array
+      isAllowDoc.companyFill.push(newCompany._id);
+      await isAllowDoc.save();
+  
+      // Compose the email text with the company details
+      const text = `
+      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; font-size: 1.2vmax;">
+          <h2 style="color: #2c3e52;">Dear ${newCompany.authorizedSignatory},</h2>
+          <p style="font-size: 1.2vmax;">
+              Thank you for submitting your company's details. We have successfully received your information, and it is currently in <strong>PENDING</strong> state. Our team will review it shortly.
+          </p>
+  
+          <h3 style="color: #2c3e52;">Your Company Details:</h3>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <tr>
+                  <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Company Name:</td>
+                  <td style="padding: 8px;">${newCompany.companyName}</td>
+              </tr>
+              <tr>
+                  <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">GST Number:</td>
+                  <td style="padding: 8px;">${newCompany.gstNumber}</td>
+              </tr>
+              <tr>
+                  <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">PAN Number:</td>
+                  <td style="padding: 8px;">${newCompany.panNumber}</td>
+              </tr>
+              <tr>
+                  <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Authorized Signatory:</td>
+                  <td style="padding: 8px;">${newCompany.authorizedSignatory}</td>
+              </tr>
+              <tr>
+                  <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Company Address:</td>
+                  <td style="padding: 8px;">${newCompany.companyAddress}</td>
+              </tr>
+              <tr>
+                  <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Authorized Signatory Address:</td>
+                  <td style="padding: 8px;">${newCompany.authorizedSignatoryAddress}</td>
+              </tr>
+                <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Project:</td>
+                        <td style="padding: 8px;">${newCompany.project}</td>
+                    </tr>
+          </table>
+  
+          <p style="font-size: 1.2vmax;">
+              For any inquiries, you can also reach us at: <strong>+919971488477</strong>
+          </p>
+  
+          <p style="font-size: 1.2vmax;">
+              You can view your company details at any time by clicking the link below:
+          </p>
+  
+          <p>
+              <a href="https://navbharatniwas.in/company-fill/${newCompany._id}" style="color: #3498db; text-decoration: none; font-size: 1.2vmax;">
+                  <strong>Click here to view your company details</strong>
+              </a>
+          </p>
+  
+          <div style="margin: 2vmax 0.5vmax;">
+              <img src="https://navbharatniwas.in:3008/uploads/images/oo.jpg" alt="Company Fill" width="194vmax" height="126.3vmax" style="margin: 2vmax 0.5vmax;"/>
+          </div>
+  
+          <p style="margin-top: 30px;">
+              Thank you for submitting your company's details. We will notify you once it's processed.
+          </p>
+  
+          <footer style="font-size: 1vmax; color: #777;">
+              <p>Nav Bharat Niwas</p>
+              <p>For any inquiries, contact us at: support@navbharatniwas.in</p>
+          </footer>
+      </div>
+      `;
+  
+      // Send email notification
+      await sendEmail({
+        email: user.email,  // Send email to the user who submitted the company details
+        subject: 'Company Form PENDING State Submitted',
+        html: text  // HTML content for the email
+      });
+  
+      res.status(201).json({
+        success: true,
+        message: 'Company fill form created successfully',
+        company: newCompany
+      });
+  
+    } catch (error) {
+      console.log('Error while creating company fill:', error);
+      return next(new ErrorHandler('Something went wrong, please try again', 500));
+    }
+  });
+
+
+
+
+
 
 
 // Create a new IsAllow entry (for enabling the form)
@@ -431,6 +649,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
         if (newStatus === 'approved') {
             const latestIsAllow = await IsAllow.findOne({ userId }).sort({ createdAt: -1 });
             if (latestIsAllow) {
+                
                 luckyDrawUser.history.push(latestIsAllow._id);
                 await luckyDrawUser.save();
             }
@@ -460,7 +679,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
                    This amount is 100% refundable in case of no allotment under this scheme.
                </p>
 
-               <img src="https://navbharatniwasbackend.onrender.com/uploads/images/oo.jpg" width="194vmax" height="126.2vmax" style="margin: 2vmax 0.5vmax;" alt="Lucky Draw Image">
+               <img src="https://navbharatniwas.in:3008/uploads/images/oo.jpg" width="194vmax" height="126.2vmax" style="margin: 2vmax 0.5vmax;" alt="Lucky Draw Image">
 
                <p>Thank you for participating!</p>
              
@@ -487,6 +706,122 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
 
 
 
+
+
+// Approve or Reject the CompanyFill form
+export const updateCompanyFillStatus = asyncHandler(async (req, res, next) => {
+    const { id, action } = req.body;  // Extract 'id' and 'action' from the request body
+
+    try {
+        // Get the logged-in user ID from req.user
+        const userId = req.user._id;
+
+        // Find the user by ID to check if the user is an admin
+        const user = await User.findById(userId);
+        if (!user) {
+            return next(new ErrorHandler('User not found', 404));
+        }
+
+        // Check if the logged-in user is an admin
+        if (user.role !== 'admin') {
+            return next(new ErrorHandler('You are not authorized to approve or reject this CompanyFill form', 403));
+        }
+
+        // Find the CompanyFill form by its ID
+        const companyFill = await Companyfill.findById(id);
+        if (!companyFill) {
+            return next(new ErrorHandler('CompanyFill form not found', 404));
+        }
+
+        // Determine the new status based on the action
+        let newStatus;
+        if (action === 'approve') {
+            newStatus = 'approved';
+        } else if (action === 'reject') {
+            newStatus = 'rejected';
+        } else {
+            return next(new ErrorHandler('Invalid action. Use "approve" or "reject".', 400));
+        }
+
+        // Update the CompanyFill status
+        companyFill.status = newStatus;
+        await companyFill.save();
+
+        // Fetch the user to whom the CompanyFill belongs
+        const companyFillUser = await User.findById(companyFill.userId);
+        if (!companyFillUser) {
+            return next(new ErrorHandler('User associated with this CompanyFill not found', 404));
+        }
+
+        // If the action is reject, remove the latest IsAllow document ID from the user's history
+        if (newStatus === 'rejected') {
+            const latestIsAllow = await IsAllow.findOne({ userId }).sort({ createdAt: -1 });
+            if (latestIsAllow) {
+                // Remove the latest IsAllow _id from the user's history
+                const historyIndex = companyFillUser.history.indexOf(latestIsAllow._id);
+                if (historyIndex > -1) {
+                    companyFillUser.history.splice(historyIndex, 1);  // Remove the IsAllow ID from history array
+                    await companyFillUser.save();
+                }
+            }
+
+            // Delete the CompanyFill document from the database
+            await companyFill.deleteOne();
+            console.log('CompanyFill document deleted');
+        }
+
+        // If the action is approve, push the latest IsAllow document ID to the user's history
+        if (newStatus === 'approved') {
+            const latestIsAllow = await IsAllow.findOne({ userId }).sort({ createdAt: -1 });
+            if (latestIsAllow) {
+                companyFillUser.history.push(latestIsAllow._id);
+                await companyFillUser.save();
+            }
+        }
+
+        // Compose the email content
+        const subject = `Your CompanyFill form has been ${newStatus}`;
+        const text = `
+            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px;">
+                <h2 style="color: #2c3e52;">Dear ${companyFillUser.name},</h2>
+                <p>Your application for the CompanyFill with GST Number: <b>${companyFill.gstNumber}</b> has been <b>${newStatus}</b>.</p>
+
+                <h3>Application Details:</h3>
+                <p><b>Company Name:</b> ${companyFill.companyName}</p>
+                <p><b>Authorized Signatory:</b> ${companyFill.authorizedSignatory}</p>
+                <p><b>GST Number:</b> ${companyFill.gstNumber}</p>
+                <p><b>PAN Number:</b> ${companyFill.panNumber}</p>
+                <p><b>Company Address:</b> ${companyFill.companyAddress}</p>
+                <p><b>Authorized Signatory Address:</b> ${companyFill.authorizedSignatoryAddress}</p>
+                <p><b>Payment Plan:</b> ${companyFill.paymentPlan}</p>
+
+                <p style="font-size: 1.2vmax;">
+                    This amount is 100% refundable in case of no allotment under this scheme.
+                </p>
+
+                <img src="https://navbharatniwas.in:3008/uploads/images/oo.jpg" width="194vmax" height="126.2vmax" style="margin: 2vmax 0.5vmax;" alt="Lucky Draw Image">
+
+                <p>Thank you for participating!</p>
+            </div>
+        `;
+
+        // Send an email to the user notifying them of the approval/rejection
+        await sendEmail({
+            email: companyFillUser.email,
+            subject,
+            html: text // Use the html field to send HTML content
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `CompanyFill form has been ${newStatus} and an email has been sent to the user.`,
+        });
+
+    } catch (error) {
+        console.log('Error while updating CompanyFill Status:', error);
+        return next(new ErrorHandler('Something went wrong, please try again', 500));
+    }
+});
 
 
 
@@ -881,3 +1216,11 @@ export const createFaa = asyncHandler( async (req, res, next) => {
     return next(new ErrorHandler(error.message || 'Something went wrong', 500));
   }
 });
+
+
+
+
+
+
+
+

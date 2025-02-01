@@ -22,11 +22,19 @@ const luckyDrawSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  adhaarPhoto: { // Added field for Aadhaar photo (URL)
+    type: String,
+    required: true
+  },
   PANno: {
     type: String,
     required: true
   },
-  image: {
+  panPhoto: { // Added field for PAN photo (URL)
+    type: String,
+    required: true
+  },
+  image: { // Assuming this is a profile photo
     type: String,
     required: true
   },
@@ -47,20 +55,26 @@ const luckyDrawSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  DOB: {  // Added field for Date of Birth
+  DOB: {
     type: Date,
     required: true
   },
-  project: {  // Added field for Project name (string)
+  project: {
     type: String,
     required: true
   },
-  nationality: {  // Added field for nationality (string)
+  nationality: {
     type: String,
     required: true
   },
-  allotment:{
-    type:String
+  allotment: {
+    type: String
+  },
+  paymentPlan: { // Added field for payment plan
+    type: String,
+    required: true,
+    enum: ['Down Payment Plan', 'Possession Link Payment Plan', 'Flexi Payment Plan'],
+    default: 'Down Payment Plan'
   }
 }, {
   timestamps: true // Automatically adds createdAt and updatedAt fields

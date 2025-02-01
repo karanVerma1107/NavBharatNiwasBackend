@@ -24,6 +24,10 @@ const isAllowSchema = new mongoose.Schema({
         ref: 'LuckyDraw',
         
     }],
+    companyFill:[{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'CompanyFill',
+    }],
     // Reference to the user/admin who enabled this form
     userId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -33,7 +37,11 @@ const isAllowSchema = new mongoose.Schema({
     result:[{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'LuckyDraw', // Assuming 'User' model is used for admins/users
-    }]
+    }],
+    resultCompany:[{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'CompanyFill',
+    }],
 }, {
     timestamps: true // Automatically adds createdAt and updatedAt fields
 });

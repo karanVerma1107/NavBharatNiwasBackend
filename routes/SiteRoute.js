@@ -2,7 +2,7 @@ import express from 'express';
 import { isAuthenticatedUser } from '../middleware/auth.js';    
 import { addSite, createFAQ, deleteFAQsBeforeDate, deleteSite, editSite, getAllFAQs, getPostsByCurrentStatus, getSiteById, getSitesWithPagination, getTop5SiteImages, searchSite, uploadReceipt } from '../controllers/siteControllers.js';
 import { upload } from '../middleware/helper/multer.js';
-import { checkFormAndFetchResults, createFaa, getLuckyDrawById, getLuckyDraws, pushIdToResult, searchLuckyDrawById, updateLuckyDrawStatus, updateUserHistory } from '../controllers/drawControllers.js';
+import { checkFormAndFetchResults, createFaa, getLuckyDrawById, getLuckyDraws, pushIdToResult, searchLuckyDrawById, updateCompanyFillStatus, updateLuckyDrawStatus, updateUserHistory } from '../controllers/drawControllers.js';
 
 const Srouter = express.Router();
 
@@ -21,6 +21,7 @@ Srouter.route('/search').get(searchSite);
 Srouter.route('/searchDraw/:id').get(isAuthenticatedUser,searchLuckyDrawById)
 Srouter.route('/draw/:id').get(isAuthenticatedUser,getLuckyDrawById);
 Srouter.route('/update-draw-status').put(isAuthenticatedUser,updateLuckyDrawStatus);
+Srouter.route('/update-company-status').put(isAuthenticatedUser, updateCompanyFillStatus);
 Srouter.route('/getAlldraws').get(isAuthenticatedUser,getLuckyDraws);
 Srouter.route('/pass/:Lid/:allot').put(isAuthenticatedUser, pushIdToResult);
 Srouter.route('/history').get(isAuthenticatedUser,updateUserHistory);

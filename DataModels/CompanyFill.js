@@ -6,6 +6,11 @@ const companyFillSchema = new mongoose.Schema({
       required: [true, 'Company Name is required'],
       trim: true
     },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+      },
     authorizedSignatory: {
       type: String,
       required: [true, 'Authorized Signatory name is required'],
@@ -56,8 +61,8 @@ const companyFillSchema = new mongoose.Schema({
     },
     status: {
       type: String,
-      enum: ['Pending', 'Approved', 'Rejected'],
-      default: 'Pending'
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
     },
     project: {
       type: String,

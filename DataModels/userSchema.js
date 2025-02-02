@@ -73,6 +73,9 @@ const userSchema = new mongoose.Schema({
       },
     LuckyDraw:[{
         type: String
+    }],
+    CompanyFill:[{
+        type: String
     }]
 
 

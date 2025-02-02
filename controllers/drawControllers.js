@@ -306,6 +306,7 @@ export const createCompanyFill = asyncHandler(async (req, res, next) => {
   
       // Create a new company fill document
       const newCompany = new Companyfill({
+        userId,
         companyName,
         authorizedSignatory,
         gstNumber,
@@ -330,6 +331,11 @@ export const createCompanyFill = asyncHandler(async (req, res, next) => {
       // Push the new company fill ID to IsAllow document's companyFill array
       isAllowDoc.companyFill.push(newCompany._id);
       await isAllowDoc.save();
+
+
+      // Link the form to the user and IsAllow documents
+      user.CompanyFill.push(newCompany._id);
+      await user.save();
   
       // Compose the email text with the company details
       const text = `
@@ -341,6 +347,10 @@ export const createCompanyFill = asyncHandler(async (req, res, next) => {
   
           <h3 style="color: #2c3e52;">Your Company Details:</h3>
           <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+           <tr>
+                  <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Ticket ID:</td>
+                  <td style="padding: 8px;">${newCompany._id}</td>
+              </tr>
               <tr>
                   <td style="padding: 8px; font-weight: bold; background-color: #f2f2f2;">Company Name:</td>
                   <td style="padding: 8px;">${newCompany.companyName}</td>
@@ -787,6 +797,7 @@ export const updateCompanyFillStatus = asyncHandler(async (req, res, next) => {
                 <p>Your application for the CompanyFill with GST Number: <b>${companyFill.gstNumber}</b> has been <b>${newStatus}</b>.</p>
 
                 <h3>Application Details:</h3>
+                <p><b>Ticket ID:</b> ${companyFill._id}</p>
                 <p><b>Company Name:</b> ${companyFill.companyName}</p>
                 <p><b>Authorized Signatory:</b> ${companyFill.authorizedSignatory}</p>
                 <p><b>GST Number:</b> ${companyFill.gstNumber}</p>
@@ -866,6 +877,125 @@ export const searchLuckyDrawById = asyncHandler(async (req, res, next) => {
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });
+
+
+
+
+
+
+
+// Function to search CompanyFill by ID
+export const searchCompanyFillById = asyncHandler(async (req, res, next) => {
+    const { id } = req.params; // Extract 'id' from the request params
+
+    try {
+        // Get the logged-in user ID from req.user
+        const userId = req.user._id;
+
+        // Find the user by ID to check if the user is an admin
+        const user = await User.findById(userId);
+        if (!user) {
+            return next(new ErrorHandler('User not found', 404));
+        }
+
+        // Check if the logged-in user is an admin
+        if (user.role !== 'admin') {
+            return next(new ErrorHandler('You are not authorized to search this CompanyFill form', 403));
+        }
+
+        // Find the CompanyFill form by its ID
+        const companyFill = await Companyfill.findById(id);
+        if (!companyFill) {
+            return next(new ErrorHandler('CompanyFill form not found', 404));
+        }
+
+        // Return the CompanyFill details
+        res.status(200).json({
+            success: true,
+            companyFill
+        });
+
+    } catch (error) {
+        console.log('Error while searching for CompanyFill:', error);
+        return next(new ErrorHandler('Something went wrong, please try again', 500));
+    }
+});
+
+
+
+
+
+// Function to get paginated CompanyFills
+export const getCompanyFills = asyncHandler(async (req, res, next) => {
+    // Default values
+    let page = req.query.page || 1;  // Default to page 1 if not provided
+    const limit = 15; // Fixed limit per page
+
+    try {
+        // Convert page to an integer (if provided)
+        page = parseInt(page, 10);
+
+        // Validate page and limit
+        if (page < 1) {
+            return next(new ErrorHandler('Page number must be greater than 0.', 400));
+        }
+
+        // Calculate the starting index for pagination
+        const skip = (page - 1) * limit;
+
+        // Find the latest 'IsAllow' document
+        const latestIsAllow = await IsAllow.findOne()
+            .sort({ createdAt: -1 }); // Sorting by createdAt descending to get the latest document
+
+        console.log('latestIsAllow', latestIsAllow);
+
+        if (!latestIsAllow) {
+            return next(new ErrorHandler('No active form found.', 404));
+        }
+
+        // Get the list of CompanyFill references from the latest IsAllow document
+        const companyFillIds = latestIsAllow.companyFill;
+
+        // Initialize an array to store the valid CompanyFill documents
+        const validCompanyFills = [];
+
+        // Loop through the companyFillIds and fetch the corresponding CompanyFill documents
+        for (const companyFillId of companyFillIds) {
+            const companyFill = await Companyfill.findById(companyFillId);
+            console.log('companyFill', companyFill);
+
+            // If the CompanyFill document is found and its state is 'approved', add it to the validCompanyFills array
+            if (companyFill && companyFill.status === 'approved') {
+                validCompanyFills.push(companyFill);
+            }
+        }
+
+        // Paginate the validCompanyFills array for the current page
+        const paginatedCompanyFills = validCompanyFills.slice(skip, skip + limit);
+
+        // Calculate total pages based on the valid company fill count
+        const totalCompanyFills = validCompanyFills.length;
+        const totalPages = Math.ceil(totalCompanyFills / limit);
+
+        // Return the result in response
+        res.status(200).json({
+            success: true,
+            totalCompanyFills,
+            totalPages,
+            currentPage: page,
+            companyFills: paginatedCompanyFills
+        });
+
+    } catch (error) {
+        console.log('Error while fetching CompanyFills:', error);
+        return next(new ErrorHandler('Something went wrong, please try again', 500));
+    }
+});
+
+
+
+
+
 
 
 export const getLuckyDraws = asyncHandler(async (req, res, next) => {
@@ -1094,16 +1224,18 @@ export const checkFormAndFetchResults = async (req, res) => {
         // Set 7 PM on the formOpeningDate to check if it's after or before
         const formOpeningDateAt7PM = formOpeningDate.set({ hour: 19, minute: 0, second: 0, millisecond: 0 });
 
-        // Check if the form is not open yet
-        if (formOpeningDate.isAfter(currentDate)) {
-            const daysRemaining = formOpeningDate.diff(currentDate, 'days'); // Calculate days remaining
-            return res.json({ message: `Wait for ${daysRemaining} day(s) until the form opens.` });
-        }
-
+        
         // Check if it's before 7 PM on the opening day
         if (currentDate.isBefore(formOpeningDateAt7PM)) {
             const hoursRemaining = formOpeningDateAt7PM.diff(currentDate, 'hours'); // Calculate hours remaining
             return res.json({ message: `Wait for ${hoursRemaining} hour(s) until 7 PM to view the results.` });
+        }
+
+
+        // Check if the form is not open yet
+        if (formOpeningDate.isAfter(currentDate)) {
+            const daysRemaining = formOpeningDate.diff(currentDate, 'days'); // Calculate days remaining
+            return res.json({ message: `Wait for ${daysRemaining} day(s) until the form opens.` });
         }
 
         // If the form is open or the opening date is today or in the past, fetch the LuckyDraws in the result array
@@ -1216,11 +1348,3 @@ export const createFaa = asyncHandler( async (req, res, next) => {
     return next(new ErrorHandler(error.message || 'Something went wrong', 500));
   }
 });
-
-
-
-
-
-
-
-

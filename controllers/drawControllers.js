@@ -1216,14 +1216,4 @@ export const createFaa = asyncHandler( async (req, res, next) => {
     return next(new ErrorHandler(error.message || 'Something went wrong', 500));
   }
 });
-<<<<<<< HEAD
-=======
 
-
-
-
-
-
-
-
->>>>>>> b4f194539a3cf9951b428d7ac372aea356f90e8a

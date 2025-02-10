@@ -75,6 +75,16 @@ const luckyDrawSchema = new mongoose.Schema({
     required: true,
     enum: ['Down Payment Plan', 'Possession Link Payment Plan', 'Flexi Payment Plan'],
     default: 'Down Payment Plan'
+  },
+  plotSize: { // Added field for Plot Size
+    type: String,
+    enum: ['125 SQY - 150 SQY', '150 SQY - 200 SQY', 'ABOVE 200 SQY'],
+    required: true
+  },
+  preference: { // Added field for Preference
+    type: String,
+    enum: ['Corner', 'Park Facing', 'N/A'],
+    required: true
   }
 }, {
   timestamps: true // Automatically adds createdAt and updatedAt fields

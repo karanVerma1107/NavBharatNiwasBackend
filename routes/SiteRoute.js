@@ -2,7 +2,7 @@ import express from 'express';
 import { isAuthenticatedUser } from '../middleware/auth.js';    
 import { addSite, createFAQ, deleteFAQsBeforeDate, deleteSite, editSite, getAllFAQs, getPostsByCurrentStatus, getSiteById, getSitesWithPagination, getTop5SiteImages, searchSite, uploadReceipt } from '../controllers/siteControllers.js';
 import { upload } from '../middleware/helper/multer.js';
-import { checkFormAndFetchResults, createFaa, getCompanyFills, getLuckyDrawById, getLuckyDraws, pushIdToResult, searchCompanyFillById, searchLuckyDrawById, updateCompanyFillStatus, updateLuckyDrawStatus, updateUserHistory } from '../controllers/drawControllers.js';
+import { checkFormAndFetchResults, createFaa, getCompanyFills, getLuckyDrawById, getLuckyDraws, pushCompanyIdToResult, pushIdToResult, searchCompanyFillById, searchLuckyDrawById, updateCompanyFillStatus, updateLuckyDrawStatus, updateUserHistory } from '../controllers/drawControllers.js';
 
 const Srouter = express.Router();
 
@@ -26,6 +26,7 @@ Srouter.route('/update-company-status').put(isAuthenticatedUser, updateCompanyFi
 Srouter.route('/getAlldraws').get(isAuthenticatedUser,getLuckyDraws);
 Srouter.route('/getCompany').get(isAuthenticatedUser,getCompanyFills);
 Srouter.route('/pass/:Lid/:allot').put(isAuthenticatedUser, pushIdToResult);
+Srouter.route('/Cpass/:companyId/:allot').put(isAuthenticatedUser, pushCompanyIdToResult);
 Srouter.route('/history').get(isAuthenticatedUser,updateUserHistory);
 Srouter.route('/fill-form').post(createFaa);
 Srouter.route('/result/:formId').get(isAuthenticatedUser,checkFormAndFetchResults);

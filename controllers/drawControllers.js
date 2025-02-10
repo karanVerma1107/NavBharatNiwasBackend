@@ -676,7 +676,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
 
         // If the action is approve, push the latest IsAllow document ID to the user's history
         if (newStatus === 'approved') {
-            const latestIsAllow = await IsAllow.findOne({ userId }).sort({ createdAt: -1 });
+            const latestIsAllow = await IsAllow.findOne().sort({ createdAt: -1 });
             if (latestIsAllow) {
                 
                 luckyDrawUser.history.push(latestIsAllow._id);

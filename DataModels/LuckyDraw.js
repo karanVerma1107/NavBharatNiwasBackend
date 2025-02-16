@@ -85,6 +85,9 @@ const luckyDrawSchema = new mongoose.Schema({
     type: String,
     enum: ['Corner', 'Park Facing', 'N/A'],
     required: true
+  },
+  gift:{
+    type:String
   }
 }, {
   timestamps: true // Automatically adds createdAt and updatedAt fields

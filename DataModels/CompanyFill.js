@@ -76,6 +76,9 @@ const companyFillSchema = new mongoose.Schema({
     type: String,
     enum: ['Corner', 'Park Facing', 'N/A'],
     required: true
+  },
+  gift:{
+    type:String
   }
 });
 

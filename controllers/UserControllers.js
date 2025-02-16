@@ -8,6 +8,7 @@ import fs from 'fs';
 import LuckyDraw from "../DataModels/LuckyDraw.js";
 import session from "express-session";
 import { Domain } from "domain";
+import Companyfill from "../DataModels/CompanyFill.js";
 
 cloudinary.config({
     cloud_name: "dwpdxuksp",
@@ -361,6 +362,58 @@ export const getValidFormIds = asyncHandler(async (req, res, next) => {
         return next(new ErrorHandler('Something went wrong, please try again', 500));
     }
 });
+
+
+
+
+
+// Get valid CompanyFill IDs from user.CompanyFill
+export const getValidCompanyFillIds = asyncHandler(async (req, res, next) => {
+    const userId = req.user._id; // Assuming the user is authenticated and userId is attached to req.user
+
+    try {
+        // Find the user by ID
+        const user = await User.findById(userId);
+        if (!user) {
+            return next(new ErrorHandler('User not found', 404));
+        }
+
+        // Filter valid CompanyFill IDs
+        const validCompanyFillIds = [];
+        for (let i = 0; i < user.CompanyFill.length; i++) {
+            const companyFillId = user.CompanyFill[i];
+            const companyFill = await Companyfill.findById(companyFillId);
+            if (companyFill) {
+                validCompanyFillIds.push(companyFillId); // Add to validCompanyFillIds if found
+            } else {
+                // Remove invalid CompanyFill ID from user.CompanyFill
+                user.CompanyFill.splice(i, 1);
+                i--; // Adjust index after removal
+            }
+        }
+
+        // Save the updated user
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            validCompanyFillIds
+        });
+    } catch (error) {
+        console.log('Error while fetching valid CompanyFill IDs:', error);
+        return next(new ErrorHandler('Something went wrong, please try again', 500));
+    }
+});
+
+
+
+
+
+
+
+
+
+
 
 
 //get user from token

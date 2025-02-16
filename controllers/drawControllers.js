@@ -8,6 +8,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import moment from 'moment';
 import FAQ from "../DataModels/FAQ.js";
 import Companyfill from "../DataModels/CompanyFill.js";
+import Allotment from "../DataModels/allotment.js";
 
 import IsAllow from "../DataModels/allowForm.js";
 
@@ -129,6 +130,7 @@ export const createForm = asyncHandler(async (req, res, next) => {
                 openingDate,
                 image: profileImageUrl // Store the Cloudinary URL for profile image
             });
+
 
             // Save the form
             await newForm.save();
@@ -604,6 +606,93 @@ export const deleteIsAllowForm = asyncHandler(async (req, res, next) => {
     }
 });
 
+
+
+
+
+
+// Function to get IsAllow records with pagination
+export const getIsAllow = asyncHandler(async (req, res, next) => {
+    try {
+        // Extract user from req.user
+        const userId = req.user.id;
+
+ // Find the user by ID to check their role
+ const user = await User.findById(userId);
+ if (!user) {
+     return next(new ErrorHandler('User not found', 404));
+ }
+
+        const userRole = user.role;  // Assuming 'role' field exists in the user model
+
+        // Check if the user is an admin
+        if (userRole !== 'admin') {
+            // If the user is not an admin, throw a 403 error (Forbidden)
+            return next(new ErrorHandler('You do not have permission to view this data', 403));
+        }
+
+        // Get the page number from the query, default to 1 if not provided
+        const page = parseInt(req.query.page) || 1;
+        const recordsPerPage = 12;
+
+        // Fetch the records from the IsAllow collection in reverse order (latest first)
+        const isAllowRecords = await IsAllow.find()
+            .sort({ createdAt: -1 })  // Sort by createdAt in reverse order (newest first)
+            .skip((page - 1) * recordsPerPage)  // Skip records for pagination
+            .limit(recordsPerPage);  // Limit to 12 records per page
+
+        // Get total record count for pagination purposes
+        const totalRecords = await IsAllow.countDocuments();
+
+        // If no records are found, throw an error using ErrorHandler
+        if (!isAllowRecords || isAllowRecords.length === 0) {
+            return next(new ErrorHandler('No records found', 404));
+        }
+
+        // Return the result with pagination info
+        res.status(200).json({
+            success: true,
+            isAllow: isAllowRecords,
+            totalRecords, // Total records for pagination
+            totalPages: Math.ceil(totalRecords / recordsPerPage),  // Total pages
+            currentPage: page
+        });
+    } catch (error) {
+        // Catch any errors that occur during the function execution
+        next(new ErrorHandler('Something went wrong, please try again', 500));  // Call the error handler
+    }
+});
+
+
+
+
+
+// Function to get associated results from IsAllow by its ID
+export const getIsAllowResults = asyncHandler(async (req, res, next) => {
+    const { id } = req.params; // Get the 'id' from the URL parameters
+  
+    try {
+      // Find the IsAllow document by its ID and populate the result and resultCompany fields
+      const isAllowData = await IsAllow.findById(id)
+        .populate('result', '_id name phoneNo fatherName address') // Populate the result (LuckyDraw) with specific fields
+        .populate('resultCompany', '_id companyName authorizedSignatory gstNumber companyAddress'); // Populate resultCompany (CompanyFill) with specific fields
+  
+      if (!isAllowData) {
+        return next(new ErrorHandler('IsAllow form not found', 404));
+      }
+  
+      // Return the associated data (LuckyDraw results and CompanyFill results)
+      res.status(200).json({
+        success: true,
+        data: {
+          result: isAllowData.result, // Contains only 'name', 'phoneNo', 'fatherName', 'address' for LuckyDraw
+          resultCompany: isAllowData.resultCompany // Contains 'companyName', 'authorizedSignatory', 'gstNumber', 'companyAddress' for CompanyFill
+        }
+      });
+    } catch (error) {
+      return next(new ErrorHandler('Something went wrong, please try again', 500));
+    }
+  });
 
 
 // Approve or Reject the LuckyDraw
@@ -1151,6 +1240,57 @@ export const getUserFormFilledWithOpeningDate = asyncHandler(async (req, res, ne
 
 
 
+// Get User's CompanyFill details with status and createdAt date
+export const getUserCompanyFillWithStatusDate = asyncHandler(async (req, res, next) => {
+
+    console.log('kkkjkjjkk')
+    try {
+        const userId = req.user._id; // Getting userId from req.user._id (assuming it's set by auth middleware)
+
+        // Find the user by userId
+        const user = await User.findById(userId);
+
+        // If user doesn't exist, throw an error
+        if (!user) {
+            return next(new ErrorHandler('User not found', 404));
+        }
+
+        // Fetch CompanyFill documents for each ID in CompanyFill array
+        const companyFillData = await Promise.all(
+            user.CompanyFill.map(async (companyFillId) => {
+                const companyFill = await Companyfill.findById(companyFillId);
+
+                // If CompanyFill doesn't exist, we ignore it (or handle accordingly)
+                if (!companyFill) return null;
+
+                return {
+                    _id: companyFill._id,
+                    status: companyFill.status,
+                    createdAt: companyFill.createdAt,
+                    companyName: companyFill.companyName,
+                };
+            })
+        );
+
+        // Remove any null results (for the case where a CompanyFill wasn't found)
+        const validCompanyFillData = companyFillData.filter(item => item !== null);
+
+        // Reverse the array to return it in reverse order (optional, depending on your use case)
+        const reversedCompanyFillData = validCompanyFillData.reverse();
+
+        // Send the response with the reversed CompanyFill data
+        res.status(200).json({
+            success: true,
+            companyFill: reversedCompanyFillData
+        });
+    } catch (error) {
+        console.error("Error fetching user's company fill data: ", error);
+        return next(new ErrorHandler('Something went wrong, please try again later', 500));
+    }
+});
+
+
+
 // Get Lucky Draw by ID
 export const getLuckyDrawById = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
@@ -1172,9 +1312,33 @@ export const getLuckyDrawById = asyncHandler(async (req, res, next) => {
 
 
 
+// Get CompanyFill by ID
+export const getCompanyFillById = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+  
+    // Find the CompanyFill by ID
+    const companyFill = await Companyfill.findById(id);
+  
+    if (!companyFill) {
+      return next(new ErrorHandler('Company Fill not found', 404)); // If not found, throw a 404 error
+    }
+  
+    res.status(200).json({
+      success: true,
+      companyFill
+    });
+  });
+  
+
+
+
+
+
+
+
   // Push ID to the result array and update the allotment in LuckyDraw
 export const pushIdToResult = asyncHandler(async (req, res, next) => {
-    const { Lid,  allot } = req.params; // Get 'Lid', 'id', and 'allot' from the request params
+    const { Lid,  allot, gift } = req.params; // Get 'Lid', 'id', and 'allot' from the request params
     
     try {
         // Find the latest 'IsAllow' document based on the 'createdAt' field (most recent one)
@@ -1204,6 +1368,7 @@ export const pushIdToResult = asyncHandler(async (req, res, next) => {
 
         // Update the allotment field of the LuckyDraw document
         luckyDraw.allotment = allot; // allot is a string, ensure this is correct
+        luckyDraw.gift = gift;
         await luckyDraw.save(); // Save the updated LuckyDraw document
 
         // Send a success message
@@ -1224,7 +1389,7 @@ export const pushIdToResult = asyncHandler(async (req, res, next) => {
 
 // Push Company ID to the resultCompany array and update the allotment in CompanyFill
 export const pushCompanyIdToResult = asyncHandler(async (req, res, next) => {
-    const { companyId, allot } = req.params; // Get 'companyId' and 'allot' from the request params
+    const { companyId, allot, gift } = req.params; // Get 'companyId' and 'allot' from the request params
     
     try {
         // Find the latest 'IsAllow' document based on the 'createdAt' field (most recent one)
@@ -1254,6 +1419,7 @@ export const pushCompanyIdToResult = asyncHandler(async (req, res, next) => {
 
         // Update the allotment field of the CompanyFill document
         companyFill.allotment = allot; // allot is a string, ensure this is correct
+        companyFill.gift = gift;
         await companyFill.save(); // Save the updated CompanyFill document
 
         // Send a success message
@@ -1356,7 +1522,7 @@ export const updateUserHistory = asyncHandler(async (req, res) => {
         }
 
         // If there were valid IsAllow documents, return them
-        const updatedIsAllowDocs = validIsAllows;
+        const updatedIsAllowDocs = validIsAllows.reverse();;
 
         return res.json({
             message: 'History updated successfully',
@@ -1368,6 +1534,8 @@ export const updateUserHistory = asyncHandler(async (req, res) => {
         return res.status(500).json({ message: 'An error occurred while updating user history' });
     }
 });
+
+
 
 
 
@@ -1417,3 +1585,121 @@ export const createFaa = asyncHandler( async (req, res, next) => {
     return next(new ErrorHandler(error.message || 'Something went wrong', 500));
   }
 });
+
+
+
+
+export const createIndiAllotment = async (req, res) => {
+    try {
+        const adminUserId = req.user._id; // Get logged-in user ID
+
+        // Verify if the logged-in user exists and check role
+        const existingUser = await User.findById(adminUserId);
+        if (!existingUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        if (existingUser.role !== "admin") {
+            return res.status(403).json({ message: "Access denied. Only admins can proceed." });
+        }
+
+        // Construct Allotment object with values from req.body
+        const allotmentData = {
+            name: req.body.name,
+            swdo: req.body.swdo,
+            phoneNumber: req.body.phoneNumber,
+            gstNumber: req.body.gstNumber,
+            dob: req.body.dob,
+            nationality: req.body.nationality,
+            emailId: req.body.emailId,
+            aadhaarNo: req.body.aadhaarNo,
+            panNo: req.body.panNo,
+            profession: req.body.profession,
+            address: req.body.address,
+            uniqueId: req.body.uniqueId,
+            // Property Details
+            developmentCharge: req.body.developmentCharge,
+            area: req.body.area,
+            unitNo: req.body.unitNo,
+            plc: req.body.plc,
+            paymentPlan: req.body.paymentPlan,
+            changeinPP: req.body.changeinPP,
+
+            // Payment Details
+            plcAmount: req.body.plcAmount,
+            registrationAmount: req.body.registrationAmount,
+            totalCost: req.body.totalCost,
+            modeOfPayment: req.body.modeOfPayment,
+            chequeNoDDNo: req.body.chequeNoDDNo,
+            bankName: req.body.bankName,
+            amount: req.body.amount,
+            chequeDateDDDate: req.body.chequeDateDDDate,
+            transactionId: req.body.transactionId,
+        };
+
+        // Create new allotment document
+        const newAllotment = new Allotment(allotmentData);
+        await newAllotment.save();
+
+        return res.status(201).json({ message: "Allotment created successfully", allotment: newAllotment });
+
+    } catch (error) {
+        console.error("Error creating allotment:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+
+export const createCompanyAllotment = async (req, res) => {
+    try {
+        const adminUserId = req.user._id; // Get logged-in user ID
+
+        // Verify if the logged-in user exists and check role
+        const existingUser = await User.findById(adminUserId);
+        if (!existingUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        if (existingUser.role !== "admin") {
+            return res.status(403).json({ message: "Access denied. Only admins can proceed." });
+        }
+
+        // Construct Allotment object with values from req.body
+        const allotmentData = {
+            name: req.body.authorizedSignatory,
+            
+            gstNumber: req.body.gstNumber,
+            company: req.body.companyName,
+            emailId: req.body.emailId,
+            panNo: req.body.panNumber,
+            address: req.body.companyAddress,
+            
+            uniqueId: req.body.uniqueId,
+            // Property Details
+            developmentCharge: req.body.developmentCharge,
+            area: req.body.area,
+            unitNo: req.body.unitNo,
+            plc: req.body.plc,
+            paymentPlan: req.body.paymentPlan,
+            date: Date.now(),
+            // Payment Details
+            plcAmount: req.body.plcAmount,
+            registrationAmount: req.body.registrationAmount,
+            totalCost: req.body.totalCost,
+            modeOfPayment: req.body.modeOfPayment,
+            chequeNoDDNo: req.body.chequeNoDDNo,
+            bankName: req.body.bankName,
+            amount: req.body.amount,
+            chequeDateDDDate: req.body.chequeDateDDDate,
+            transactionId: req.body.transactionId,
+        };
+
+        // Create new allotment document
+        const newAllotment = new Allotment(allotmentData);
+        await newAllotment.save();
+
+        return res.status(201).json({ message: "Allotment created successfully", allotment: newAllotment });
+
+    } catch (error) {
+        console.error("Error creating allotment:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};

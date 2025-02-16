@@ -1,9 +1,10 @@
 import express from 'express';
 
 import { isAuthenticatedUser } from '../middleware/auth.js';
-import {  getUserFromToken, getValidFormIds, logout, otpSendToVerify, sendLoginOtp, verifyOtpAndCreateAccount, verifyOtpAndLogin } from '../controllers/UserControllers.js';
-import { createCompanyFill, createForm, createIsAllowForm, getIsallowLatest, getUserFormFilledWithOpeningDate} from '../controllers/drawControllers.js';
+import {  getUserFromToken, getValidCompanyFillIds, getValidFormIds, logout, otpSendToVerify, sendLoginOtp, verifyOtpAndCreateAccount, verifyOtpAndLogin } from '../controllers/UserControllers.js';
+import { createCompanyFill, createForm, createIsAllowForm, getIsallowLatest, getUserCompanyFillWithStatusDate, getUserFormFilledWithOpeningDate} from '../controllers/drawControllers.js';
 import { upload } from '../middleware/helper/multer.js';
+
 
 const Urouter = express.Router();
 
@@ -34,7 +35,10 @@ Urouter.route('/company-fill').post(isAuthenticatedUser, upload.fields([
 
 Urouter.route('/isAllowLatest').get(getIsallowLatest);
 Urouter.route('/user-valid-id').get(isAuthenticatedUser,getValidFormIds);
+Urouter.route('/user-Cvalid-id').get(isAuthenticatedUser,getValidCompanyFillIds);
+
 Urouter.route('/me').get(isAuthenticatedUser, getUserFromToken);
 Urouter.route('/getApplications').get(isAuthenticatedUser,getUserFormFilledWithOpeningDate);
+Urouter.route('/getCApplications').get(isAuthenticatedUser, getUserCompanyFillWithStatusDate);
 
 export default Urouter;

@@ -76,6 +76,10 @@ const userSchema = new mongoose.Schema({
     }],
     CompanyFill:[{
         type: String
+    }],
+    allotmentLetters:[{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:'Allotment'
     }]
 
 

@@ -60,7 +60,7 @@ app.use(cookieParser());
 
 // Define the path to the 'uploads' folder
 const __filename = fileURLToPath(import.meta.url); // Get the file name
-const __dirname = path.dirname(__filename); // Get the directory name
+const _dirname = path.dirname(_filename); // Get the directory name
 
 // Ensure the uploads folder is in the correct location
 const uploadPath = path.join(__dirname, 'uploads');

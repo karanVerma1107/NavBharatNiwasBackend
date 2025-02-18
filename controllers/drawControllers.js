@@ -1606,8 +1606,9 @@ export const createIndiAllotment = async (req, res) => {
             name: req.body.name,
             swdo: req.body.swdo,
             phoneNumber: req.body.phoneNumber,
-            gstNumber: req.body.gstNumber,
+            
             dob: req.body.dob,
+            image:req.body.image,
             nationality: req.body.nationality,
             emailId: req.body.emailId,
             aadhaarNo: req.body.aadhaarNo,
@@ -1622,7 +1623,7 @@ export const createIndiAllotment = async (req, res) => {
             plc: req.body.plc,
             paymentPlan: req.body.paymentPlan,
             changeinPP: req.body.changeinPP,
-
+            date: Date.now(),
             // Payment Details
             plcAmount: req.body.plcAmount,
             registrationAmount: req.body.registrationAmount,
@@ -1639,6 +1640,22 @@ export const createIndiAllotment = async (req, res) => {
         const newAllotment = new Allotment(allotmentData);
         await newAllotment.save();
 
+
+         // Find the user by emailId
+         const user = await User.findOne({ email: req.body.emailId });
+         if (user) {
+             // Ensure notifications array exists
+             if (!user.allotmentLetters) {
+                 user.allotmentLetters = [];
+             }
+ 
+             // Push the allotment link to the allotmentLetters array
+             user.allotmentLetters.push(newAllotment._id);
+             await user.save();
+         }
+
+
+
         return res.status(201).json({ message: "Allotment created successfully", allotment: newAllotment });
 
     } catch (error) {
@@ -1646,6 +1663,9 @@ export const createIndiAllotment = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+
+
 
 
 export const createCompanyAllotment = async (req, res) => {
@@ -1664,13 +1684,12 @@ export const createCompanyAllotment = async (req, res) => {
         // Construct Allotment object with values from req.body
         const allotmentData = {
             name: req.body.authorizedSignatory,
-            
             gstNumber: req.body.gstNumber,
             company: req.body.companyName,
+            image:req.body.image,
             emailId: req.body.emailId,
             panNo: req.body.panNumber,
             address: req.body.companyAddress,
-            
             uniqueId: req.body.uniqueId,
             // Property Details
             developmentCharge: req.body.developmentCharge,
@@ -1695,10 +1714,145 @@ export const createCompanyAllotment = async (req, res) => {
         const newAllotment = new Allotment(allotmentData);
         await newAllotment.save();
 
-        return res.status(201).json({ message: "Allotment created successfully", allotment: newAllotment });
+        // Find the user by emailId
+        const user = await User.findOne({ email: req.body.emailId });
+        if (user) {
+            // Ensure notifications array exists
+            if (!user.allotmentLetters) {
+                user.allotmentLetters = [];
+            }
+
+            // Push the allotment link to the allotmentLetters array
+            user.allotmentLetters.push(newAllotment._id);
+            await user.save();
+        }
+
+        return res.status(201).json({
+            message: "Allotment created successfully",
+            allotment: newAllotment,
+        });
 
     } catch (error) {
         console.error("Error creating allotment:", error);
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+
+export const updateSignature = asyncHandler(async (req, res, next) => {
+    const { allotmentId, signType } = req.params; // signType should be like 'sign1', 'sign2', 'sign3'
+    const { signature } = req.body; // Base64 signature string
+
+    if (!['sign1', 'sign2', 'sign3'].includes(signType)) {
+        return next(new ErrorHandler('Invalid signature type', 400));
+    }
+
+    const userId = req.user._id;
+    
+    // Fetch user details
+    const user = await User.findById(userId);
+    if (!user) {
+        return next(new ErrorHandler('User not found', 404));
+    }
+
+    // Fetch allotment details
+    const allotment = await Allotment.findById(allotmentId);
+    if (!allotment) {
+        return next(new ErrorHandler('Allotment not found', 404));
+    }
+
+    // Check if the user's email matches the allotment email
+    if (allotment.emailId !== user.email) {
+        return next(new ErrorHandler('Unauthorized: Email mismatch', 403));
+    }
+
+    // Update the specified signature
+    allotment[signType] = signature;
+    await allotment.save();
+
+    res.status(200).json({
+        success: true,
+        message: `${signType} updated successfully`,
+        allotment
+    });
+});
+
+
+
+export const searchAllotments = asyncHandler(async (req, res, next) => {
+    try {
+        const { query } = req.params;
+
+        if (!query) {
+            return next(new ErrorHandler("Search query is required", 400));
+        }
+
+        const regex = new RegExp(query, "i"); // Case-insensitive regex search
+        
+        const allotments = await Allotment.find({
+            uniqueId: { $regex: regex },
+        });
+
+        if (allotments.length === 0) {
+            return next(new ErrorHandler("No allotments found", 404));
+        }
+
+        res.status(200).json({
+            success: true,
+            results: allotments,
+        });
+    } catch (error) {
+       return next(new ErrorHandler("Something went wrong", 500));
+    }
+});
+
+
+
+export const getUserAllotments = asyncHandler(async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return next(new ErrorHandler("User not found", 404));
+        }
+
+        // Extract allotment letter IDs from the user
+        const allotmentIds = user.allotmentLetters;
+
+        // Find existing allotments based on these IDs
+        const allotments = await Allotment.find({ _id: { $in: allotmentIds } }).select('_id uniqueId');
+
+        res.status(200).json({
+            success: true,
+            allotments: allotments.reverse()
+        });
+
+    } catch (error) {
+        console.error("Error fetching user's allotment letters:", error);
+        return next(new ErrorHandler("Something went wrong", 500));
+    }
+});
+
+
+
+
+// Backend function to get allotment by ID
+export const getAllotmentById = asyncHandler(async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const allotment = await Allotment.findById(id);
+
+        if (!allotment) {
+            return next(new ErrorHandler("Allotment not found", 404));
+        }
+
+        res.status(200).json({
+            success: true,
+            allotment
+        });
+    } catch (error) {
+        next(error);
+    }
+});

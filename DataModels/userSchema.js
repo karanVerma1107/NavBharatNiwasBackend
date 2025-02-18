@@ -79,7 +79,7 @@ const userSchema = new mongoose.Schema({
     }],
     allotmentLetters:[{
         type: mongoose.Schema.Types.ObjectId,
-        ref:'Allotment'
+        ref: 'Allotment'
     }]
 
 

@@ -2,7 +2,7 @@ import express from 'express';
 import { isAuthenticatedUser } from '../middleware/auth.js';    
 import { addSite, createFAQ, deleteFAQsBeforeDate, deleteSite, editSite, getAllFAQs, getPostsByCurrentStatus, getSiteById, getSitesWithPagination, getTop5SiteImages, searchSite, uploadReceipt } from '../controllers/siteControllers.js';
 import { upload } from '../middleware/helper/multer.js';
-import { checkFormAndFetchResults, createCompanyAllotment, createFaa, createIndiAllotment, getCompanyFills, getIsAllow, getIsAllowResults, getLuckyDrawById, getLuckyDraws, pushCompanyIdToResult, pushIdToResult, searchCompanyFillById, searchLuckyDrawById, updateCompanyFillStatus, updateLuckyDrawStatus, updateUserHistory } from '../controllers/drawControllers.js';
+import { checkFormAndFetchResults, createCompanyAllotment, createFaa, createIndiAllotment, getAllotmentById, getCompanyFills, getIsAllow, getIsAllowResults, getLuckyDrawById, getLuckyDraws, getUserAllotments, pushCompanyIdToResult, pushIdToResult, searchCompanyFillById, searchLuckyDrawById, updateCompanyFillStatus, updateLuckyDrawStatus, updateSignature, updateUserHistory } from '../controllers/drawControllers.js';
 
 const Srouter = express.Router();
 
@@ -36,6 +36,9 @@ Srouter.route('/getAllisallow').get(isAuthenticatedUser,getIsAllow);
 Srouter.route('/getisallow/:id').get(isAuthenticatedUser, getIsAllowResults);
 Srouter.route('/createIndiAllotment').post(isAuthenticatedUser,createIndiAllotment );
 Srouter.route('/createCAllotment').post(isAuthenticatedUser,createCompanyAllotment );
+Srouter.route('/getAllotment').get(isAuthenticatedUser, getUserAllotments );
+Srouter.route('/getAllotmentbyId/:id').get(isAuthenticatedUser, getAllotmentById );
+Srouter.route('/sign/:allotmentId/:signType').post(isAuthenticatedUser, updateSignature );
 
 
 

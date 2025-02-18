@@ -15,7 +15,7 @@ const AllotmentSchema = new mongoose.Schema({
   address: { type: String },
   uniqueId: { type: String }, // Unique ID
   // Property Details
-  developmentCharge: { type: Number },
+  developmentCharge: { type: String },
   area: { type: String },
   unitNo: { type: String },
   plc: { type: String }, // Preferential Location Charges
@@ -23,15 +23,16 @@ const AllotmentSchema = new mongoose.Schema({
   changeinPP: { type: String }, // Change in Payment Plan
   date:{type: Date},
   // Payment Details
-  plcAmount: { type: Number },
-  registrationAmount: { type: Number },
-  totalCost: { type: Number },
+  plcAmount: { type: String },
+  registrationAmount: { type: String },
+  totalCost: { type: String },
   modeOfPayment: { type: String },
   chequeNoDDNo: { type: String },
   bankName: { type: String },
-  amount: { type: Number },
+  amount: { type: String },
   chequeDateDDDate: { type: Date },
   transactionId: { type: String },
+  image:{type: String},
 
   // Storing 3 Separate Signatures as Base64
   sign1: { type: String }, 

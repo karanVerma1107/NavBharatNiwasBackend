@@ -1738,6 +1738,8 @@ export const createCompanyAllotment = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 
+}
+
 
 
 export const updateSignature = asyncHandler(async (req, res, next) => {

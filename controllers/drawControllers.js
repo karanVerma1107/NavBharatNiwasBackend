@@ -1437,33 +1437,24 @@ export const pushCompanyIdToResult = asyncHandler(async (req, res, next) => {
 
 
 
-
 // Function to handle form opening date check and result fetching
 export const checkFormAndFetchResults = async (req, res) => {
     try {
-        const formId = req.params.formId; // Extract formId from request parameters
-
-        // Find the form by ID and populate the 'result' field
-        const form = await IsAllow.findById(formId).populate('result');
+        const formId = req.params.formId;
+        const form = await IsAllow.findById(formId).populate('result').populate('resultCompany');
 
         if (!form) {
-            return res.status(404).json({ message: "Form not found." }); // Form not found
+            return res.status(404).json({ message: "Form not found." });
         }
 
-        const currentDate = moment(); // Get today's date and time
-        const formOpeningDate = moment(form.formOpeningDate); // Convert formOpeningDate to moment object
-
-        // Set 7 PM on the formOpeningDate to check if it's after or before
+        const currentDate = moment();
+        const formOpeningDate = moment(form.formOpeningDate);
         const formOpeningDateAt7PM = formOpeningDate.set({ hour: 19, minute: 0, second: 0, millisecond: 0 });
 
-      
-
-        // Check if the form is not open yet
         if (formOpeningDate.isAfter(currentDate)) {
-            const daysRemaining = formOpeningDate.diff(currentDate, 'days'); // Calculate days remaining
-            const hoursRemaining = formOpeningDate.diff(currentDate, 'hours') % 24; // Calculate the remaining hours after days
+            const daysRemaining = formOpeningDate.diff(currentDate, 'days');
+            const hoursRemaining = formOpeningDate.diff(currentDate, 'hours') % 24;
 
-            // Create a dynamic message with both days and hours
             let message = `Wait for ${daysRemaining} day(s)`;
             if (hoursRemaining > 0) {
                 message += ` and ${hoursRemaining} hour(s)`;
@@ -1473,21 +1464,19 @@ export const checkFormAndFetchResults = async (req, res) => {
             return res.json({ message });
         }
 
-        // If the form is open or the opening date is today or in the past, fetch the LuckyDraws in the result array
         const luckyDraws = await LuckyDraw.find({ '_id': { $in: form.result } });
+        const companyForms = await Companyfill.find({ '_id': { $in: form.resultCompany } });
 
-        if (luckyDraws.length === 0) {
-            return res.json({ message: "No lucky draw results available." });
+        if (luckyDraws.length === 0 && companyForms.length === 0) {
+            return res.json({ message: "No lucky draw or company form results available." });
         }
 
-        // Return the found lucky draws
-        return res.json({ luckyDraws });
+        return res.json({ luckyDraws, companyForms });
     } catch (error) {
         console.error("Error checking form and fetching results:", error);
         return res.status(500).json({ message: "An error occurred while processing the request." });
     }
 };
-
 
 
 
@@ -1621,12 +1610,14 @@ export const createIndiAllotment = async (req, res) => {
             developmentCharge: req.body.developmentCharge,
             area: req.body.area,
             unitNo: req.body.unitNo,
+            project: req.body.project,
             plc: req.body.plc,
             paymentPlan: req.body.paymentPlan,
             changeinPP: req.body.changeinPP,
             date: Date.now(),
             // Payment Details
             plcAmount: req.body.plcAmount,
+            bookingAmount: req.body.bookingAmount,
             registrationAmount: req.body.registrationAmount,
             totalCost: req.body.totalCost,
             modeOfPayment: req.body.modeOfPayment,
@@ -1645,10 +1636,7 @@ export const createIndiAllotment = async (req, res) => {
          // Find the user by emailId
          const user = await User.findOne({ email: req.body.emailId });
          if (user) {
-             // Ensure notifications array exists
-             if (!user.allotmentLetters) {
-                 user.allotmentLetters = [];
-             }
+            
  
              // Push the allotment link to the allotmentLetters array
              user.allotmentLetters.push(newAllotment._id);
@@ -1696,11 +1684,13 @@ export const createCompanyAllotment = async (req, res) => {
             developmentCharge: req.body.developmentCharge,
             area: req.body.area,
             unitNo: req.body.unitNo,
+            project: req.body.project,
             plc: req.body.plc,
             paymentPlan: req.body.paymentPlan,
             date: Date.now(),
             // Payment Details
             plcAmount: req.body.plcAmount,
+            bookingAmount: req.body.bookingAmount,
             registrationAmount: req.body.registrationAmount,
             totalCost: req.body.totalCost,
             modeOfPayment: req.body.modeOfPayment,
@@ -1743,15 +1733,15 @@ export const createCompanyAllotment = async (req, res) => {
 
 
 export const updateSignature = asyncHandler(async (req, res, next) => {
-    const { allotmentId, signType } = req.params; // signType should be like 'sign1', 'sign2', 'sign3'
+    const { allotmentId } = req.params; // Only allotmentId is needed now
     const { signature } = req.body; // Base64 signature string
 
-    if (!['sign1', 'sign2', 'sign3'].includes(signType)) {
-        return next(new ErrorHandler('Invalid signature type', 400));
+    if (!signature) {
+        return next(new ErrorHandler('Signature is required', 400));
     }
 
     const userId = req.user._id;
-    
+
     // Fetch user details
     const user = await User.findById(userId);
     if (!user) {
@@ -1769,13 +1759,13 @@ export const updateSignature = asyncHandler(async (req, res, next) => {
         return next(new ErrorHandler('Unauthorized: Email mismatch', 403));
     }
 
-    // Update the specified signature
-    allotment[signType] = signature;
+    // Update the signature
+    allotment.sign = signature;
     await allotment.save();
 
     res.status(200).json({
         success: true,
-        message: `${signType} updated successfully`,
+        message: "Signature updated successfully",
         allotment
     });
 });
@@ -1860,3 +1850,19 @@ export const getAllotmentById = asyncHandler(async (req, res, next) => {
     }
 });
 
+
+
+
+// Get all FAQs in reverse order
+export const getAllFAQss = asyncHandler(async (req, res, next) => {
+    try {
+      const faqs = await FAQ.find().sort({ createdAt: -1 }); // Reverse order by createdAt
+      res.status(200).json({
+        success: true,
+        data: faqs
+      });
+    } catch (error) {
+      next(new ErrorHandler('Failed to fetch FAQs', 500));
+    }
+  });
+  

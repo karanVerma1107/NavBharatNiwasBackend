@@ -35,23 +35,21 @@ throw new ErrorHandler('user not found', 401)
 
 export const isAuthenticatedUser = asyncHandler(async (req, res, next) => {
     const token = req.cookies.accessToken;
-    console.log("Access token is:", token);
-
+    
     if (!token) {
         return next(new ErrorHandler('Login to access this resource', 401));
     }
 
     try {
         const { user, decodedData } = await verifyAccess(token);
-        console.log("User is:", user);
+       
         if (!user || !decodedData) {
             return next(new ErrorHandler('Login to access this resource', 401));
         }
 
         req.user = user;
         req.tokenData = decodedData;
-        console.log("Decoded data:", decodedData);
-        console.log("user is", user);
+     
         next();
     } catch (error) {
         console.log('Auth error:', error);

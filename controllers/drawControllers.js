@@ -765,7 +765,7 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
 
         // If the action is approve, push the latest IsAllow document ID to the user's history
         if (newStatus === 'approved') {
-            const latestIsAllow = await IsAllow.findOne({ userId }).sort({ createdAt: -1 });
+            const latestIsAllow = await IsAllow.findOne().sort({ createdAt: -1 });
             if (latestIsAllow) {
                 
                 luckyDrawUser.history.push(latestIsAllow._id);
@@ -1142,7 +1142,7 @@ export const getLuckyDraws = asyncHandler(async (req, res, next) => {
         // Loop through the luckyDrawIds and fetch the corresponding LuckyDraw documents
         for (const luckyDrawId of luckyDrawIds) {
             const luckyDraw = await LuckyDraw.findById(luckyDrawId);
-            console.log('drawji', luckyDraw)
+            
 
             // If the LuckyDraw document is found and its state is 'approved', add it to the validLuckyDraws array
             if (luckyDraw && luckyDraw.status === 'approved') {
@@ -1243,7 +1243,7 @@ export const getUserFormFilledWithOpeningDate = asyncHandler(async (req, res, ne
 // Get User's CompanyFill details with status and createdAt date
 export const getUserCompanyFillWithStatusDate = asyncHandler(async (req, res, next) => {
 
-    console.log('kkkjkjjkk')
+  
     try {
         const userId = req.user._id; // Getting userId from req.user._id (assuming it's set by auth middleware)
 
@@ -1351,20 +1351,25 @@ export const pushIdToResult = asyncHandler(async (req, res, next) => {
 
         // Check if the provided 'id' is already in the result array to avoid duplicates
         if (latestIsAllow.result.includes(Lid)) {
-            return next(new ErrorHandler(`ID ${id} is already in the result array`, 400));
+            return next(new ErrorHandler(`ID ${Lid} is already in the result array`, 400));
         }
 
+         // Find the LuckyDraw document by 'Lid'
+         const luckyDraw = await LuckyDraw.findById(Lid);
+
+         console.log('lucky is', luckyDraw); 
+    
+         if (!luckyDraw) {
+             return next(new ErrorHandler('LuckyDraw not found', 404));
+         }
+
         // Push the provided 'id' to the 'result' array in the latest IsAllow document
-        latestIsAllow.result.push(Lid);
+        latestIsAllow.result.push(luckyDraw._id);
 
         // Save the updated 'IsAllow' document
         await latestIsAllow.save();
 
-        // Find the LuckyDraw document by 'Lid'
-        const luckyDraw = await LuckyDraw.findById(Lid);
-        if (!luckyDraw) {
-            return next(new ErrorHandler('LuckyDraw not found', 404));
-        }
+       
 
         // Update the allotment field of the LuckyDraw document
         luckyDraw.allotment = allot; // allot is a string, ensure this is correct
@@ -1577,6 +1582,7 @@ export const createFaa = asyncHandler( async (req, res, next) => {
 
 
 
+
 export const createIndiAllotment = async (req, res) => {
     try {
         const adminUserId = req.user._id; // Get logged-in user ID
@@ -1726,7 +1732,9 @@ export const createCompanyAllotment = async (req, res) => {
         console.error("Error creating allotment:", error);
         return res.status(500).json({ message: "Internal Server Error" });
     }
-};
+
+}
+
 
 
 export const updateSignature = asyncHandler(async (req, res, next) => {

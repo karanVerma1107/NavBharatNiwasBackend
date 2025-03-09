@@ -26,8 +26,10 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Define the path to the 'uploads' folder
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url); // Get the file name
+const __dirname = path.dirname(__filename); // Get the directory name
+
+// Ensure the uploads folder is in the correct location
 const uploadPath = path.join(__dirname, 'uploads');
 
 // Serve files from the 'uploads' directory as static files

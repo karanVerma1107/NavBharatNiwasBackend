@@ -1469,7 +1469,7 @@ export const checkFormAndFetchResults = async (req, res) => {
             return res.json({ message });
         }
 
-        const luckyDraws = await LuckyDraw.find({ '_id': { $in: form.result } });
+        const luckyDraws = (await LuckyDraw.find({ '_id': { $in: form.result } })).reverse();
         const companyForms = await Companyfill.find({ '_id': { $in: form.resultCompany } });
 
         if (luckyDraws.length === 0 && companyForms.length === 0) {

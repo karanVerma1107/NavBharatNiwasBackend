@@ -19,6 +19,7 @@ const companyFillSchema = new mongoose.Schema({
   gstNumber: {
     type: String,
     required: [true, 'GST Number is required'],
+    
    
   },
   panNumber: {
@@ -82,8 +83,7 @@ const companyFillSchema = new mongoose.Schema({
   }
 });
 
-// Add compound index for better query performance
-companyFillSchema.index({ companyName: 1, gstNumber: 1 });
+
 
 const Companyfill = mongoose.model('CompanyFill', companyFillSchema);
 

@@ -766,10 +766,13 @@ export const updateLuckyDrawStatus = asyncHandler(async (req, res, next) => {
         // If the action is approve, push the latest IsAllow document ID to the user's history
         if (newStatus === 'approved') {
             const latestIsAllow = await IsAllow.findOne().sort({ createdAt: -1 });
+            console.log("latestIsAllow found:", latestIsAllow);
+
             if (latestIsAllow) {
                 
                 luckyDrawUser.history.push(latestIsAllow._id);
                 await luckyDrawUser.save();
+                console.log("moved to history")
             }
         }
 
@@ -890,10 +893,13 @@ export const updateCompanyFillStatus = asyncHandler(async (req, res, next) => {
 
         // If the action is approve, push the latest IsAllow document ID to the user's history
         if (newStatus === 'approved') {
-            const latestIsAllow = await IsAllow.findOne({ userId }).sort({ createdAt: -1 });
+            const latestIsAllow = await IsAllow.findOne().sort({ createdAt: -1 });
+            console.log("latestIsAllow found:", latestIsAllow);
+
             if (latestIsAllow) {
                 companyFillUser.history.push(latestIsAllow._id);
                 await companyFillUser.save();
+                console.log("moved to history")
             }
         }
 
@@ -1615,7 +1621,7 @@ export const createIndiAllotment = async (req, res) => {
             developmentCharge: req.body.developmentCharge,
             area: req.body.area,
             unitNo: req.body.unitNo,
-            project: req.body.project,
+            Project: req.body.project,
             plc: req.body.plc,
             paymentPlan: req.body.paymentPlan,
             changeinPP: req.body.changeinPP,
@@ -1689,7 +1695,7 @@ export const createCompanyAllotment = async (req, res) => {
             developmentCharge: req.body.developmentCharge,
             area: req.body.area,
             unitNo: req.body.unitNo,
-            project: req.body.project,
+            Project: req.body.project,
             plc: req.body.plc,
             paymentPlan: req.body.paymentPlan,
             date: Date.now(),

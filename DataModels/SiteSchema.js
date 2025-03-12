@@ -27,6 +27,14 @@ const siteSchema = new mongoose.Schema({
     type: String,
     ref: 'User',
     required: true
+  }, 
+  ytlink:{
+    type: String,
+    required: true
+  },
+  charges:{
+    type:String,
+    required:true
   }
 
 }, {

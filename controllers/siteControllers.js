@@ -19,7 +19,7 @@ export const addSite = asyncHandler(async (req, res, next) => {
     console.log("req.body",req.body);
     console.log("req.files",req.files);
 
-    const { name, description, current, formYes } = req.body; // Default discount to 0
+    const { name, description, current, formYes, ytlink, charges } = req.body; // Default discount to 0
     const images = req.files; // Assuming `req.files` contains the uploaded images
 
     // Check if user is admin
@@ -64,6 +64,8 @@ export const addSite = asyncHandler(async (req, res, next) => {
             name,
             description,
             current,
+            ytlink,
+            charges,
             images: imageUrls, // Store Cloudinary image URLs
             formYes: formYes || false,
             postedBy: req.user.userName
@@ -447,7 +449,7 @@ export  const searchSite = asyncHandler(async (req, res, next) => {
       $options: 'i'  // Make the regex case-insensitive
     }, 
     current: 'ongoing'  // Only return sites where current status is 'ongoing'
-  }).select('name _id');  // Only select name and _id fields
+  }).select('name _id charges');  // Only select name and _id fields
 
   // If no sites are found
   if (!sites || sites.length === 0) {

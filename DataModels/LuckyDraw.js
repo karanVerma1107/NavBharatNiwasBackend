@@ -78,7 +78,7 @@ const luckyDrawSchema = new mongoose.Schema({
   },
   plotSize: { // Added field for Plot Size
     type: String,
-    enum: ['125 SQY - 150 SQY', '150 SQY - 200 SQY', 'ABOVE 200 SQY'],
+    enum: ['50 SQY  - 125 SQY','125 SQY - 150 SQY', '150 SQY - 200 SQY', 'ABOVE 200 SQY'],
     required: true
   },
   preference: { // Added field for Preference

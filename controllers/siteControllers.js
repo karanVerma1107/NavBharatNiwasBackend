@@ -19,7 +19,7 @@ export const addSite = asyncHandler(async (req, res, next) => {
     console.log("req.body",req.body);
     console.log("req.files",req.files);
 
-    const { name, description, current, formYes, ytlink, charges } = req.body; // Default discount to 0
+    const { name, description, current, formYes,  ytlink, charges, state, city, unit } = req.body; // Default discount to 0
     const images = req.files; // Assuming `req.files` contains the uploaded images
 
     // Check if user is admin
@@ -66,9 +66,13 @@ export const addSite = asyncHandler(async (req, res, next) => {
             current,
             ytlink,
             charges,
+            city,
+            state,
+            unit,
             images: imageUrls, // Store Cloudinary image URLs
             formYes: formYes || false,
-            postedBy: req.user.userName
+            postedBy: req.user.userName,
+
 
            
         });

@@ -11,6 +11,7 @@ import Companyfill from "../DataModels/CompanyFill.js";
 import Allotment from "../DataModels/allotment.js";
 
 import IsAllow from "../DataModels/allowForm.js";
+import Site from "../DataModels/SiteSchema.js";
 
 cloudinary.config({
     cloud_name: "dwpdxuksp",
@@ -1876,4 +1877,31 @@ export const getAllFAQss = asyncHandler(async (req, res, next) => {
       next(new ErrorHandler('Failed to fetch FAQs', 500));
     }
   });
+  
+
+
+
+  export const getSitesByStateAndCity = asyncHandler(async (req, res) => {
+    let { state, city } = req.query;
+
+  const query = {};
+
+  if (typeof state === 'string' && state.trim() !== '') {
+    query.state = { $regex: state.trim(), $options: 'i' };
+  }
+
+  if (typeof city === 'string' && city.trim() !== '') {
+    query.city = { $regex: city.trim(), $options: 'i' };
+  }
+  
+    const sites = await Site.find(query);
+  
+    if (!sites.length) {
+      throw new ErrorHandler('No sites as of now, may come soon.', 404);
+    }
+  
+    res.status(200).json(sites);
+  });
+  
+  
   

@@ -27,16 +27,27 @@ const siteSchema = new mongoose.Schema({
     type: String,
     ref: 'User',
     required: true
-  }, 
+  },
+  state:{
+    type: String,
+    required: true
+  },
+  city:{
+    type: String,
+    required: true
+  },
+  unit:{
+    type: String,
+    required: true
+  },
   ytlink:{
     type: String,
     required: true
   },
   charges:{
-    type:String,
-    required:true
-  }
-
+    type: String,
+    required: true
+  },
 }, {
   timestamps: true // Automatically adds createdAt and updatedAt fields
 });

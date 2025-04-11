@@ -12,6 +12,7 @@ import Allotment from "../DataModels/allotment.js";
 
 import IsAllow from "../DataModels/allowForm.js";
 import Site from "../DataModels/SiteSchema.js";
+import Blog from "../DataModels/Blogs.js";
 
 cloudinary.config({
     cloud_name: "dwpdxuksp",
@@ -1905,3 +1906,84 @@ export const getAllFAQss = asyncHandler(async (req, res, next) => {
   
   
   
+
+
+  
+export const createBlog = asyncHandler(async (req, res, next) => {
+    try {
+        console.log('Function executed');  // For debugging purposes
+      const adminUserId = req.user._id;
+  
+      // Check if the user exists
+      const existingUser = await User.findById(adminUserId);
+      if (!existingUser) {
+        return next(new ErrorHandler('User not found', 404));
+      }
+  
+      // Check for admin role
+      if (existingUser.role !== 'executive') {
+        return next(new ErrorHandler('Access denied. Only admins can proceed.', 403));
+      }
+  
+      const { heading, content, instagramEmbedLink } = req.body;
+  
+      // Basic validation
+      if (!heading || !content) {
+        return next(new ErrorHandler('Heading and content are required', 400));
+      }
+  
+      const blog = await Blog.create({
+        heading,
+        content,
+        instagramEmbedLink
+      });
+  
+      res.status(201).json({
+        success: true,
+        message: 'Blog created successfully',
+        data: blog
+      });
+    } catch (error) {
+        console.log('Error while creating blog:', error);
+      return next(new ErrorHandler(error.message || 'Server Error', 500));
+    }
+  });
+
+
+
+
+  export const getBlogById = asyncHandler(async (req, res, next) => {
+    try {
+        console.log('Function executed2');  // For debugging purposes
+      const blogId = req.params.id;
+  
+      const blog = await Blog.findById(blogId);
+  
+      if (!blog) {
+        return next(new ErrorHandler('Blog not found', 404));
+      }
+  
+      res.status(200).json({
+        success: true,
+        data: blog
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message || 'Server Error', 500));
+    }
+  });
+
+
+  
+export const getAllBlogs = asyncHandler(async (req, res, next) => {
+    try {
+      const blogs = await Blog.find().sort({ createdAt: -1 }); // -1 means descending
+  
+      res.status(200).json({
+        success: true,
+        count: blogs.length,
+        data: blogs
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message || 'Failed to fetch blogs', 500));
+    }
+  });

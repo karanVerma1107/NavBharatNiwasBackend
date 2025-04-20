@@ -42,7 +42,7 @@ Srouter.route('/getAllotment/:query').get(isAuthenticatedUser, searchAllotments 
 Srouter.route('/getAllotmentbyId/:id').get(isAuthenticatedUser, getAllotmentById );
 Srouter.route('/sign/:allotmentId').post(isAuthenticatedUser, updateSignature );
 Srouter.route('/seefaq').get(isAuthenticatedUser,getAllFAQss);
-Srouter.route('/blogpost').post(isAuthenticatedUser, createBlog);
+Srouter.route('/blogpost').post(isAuthenticatedUser, upload.any(), createBlog);
 Srouter.route('/blog/:id').get(getBlogById);
 Srouter.route('/allblogs').get(getAllBlogs);
 

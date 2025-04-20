@@ -6,21 +6,24 @@ const blogSchema = new mongoose.Schema({
   heading: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
-  content: {
-    type: String,
-    required: true
-  },
-  instagramEmbedLink: {
-    type: String,
-    required: false
-    
-  },
+  block: [
+    {
+      pic: {
+        type: String, // URL or path to the picture
+        required: false, // optional if not every block has a picture
+      },
+      content: {
+        type: String,
+        required: true,
+      },
+    }
+  ],
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
 const Blog = mongoose.models.Blog || mongoose.model('Blog', blogSchema);

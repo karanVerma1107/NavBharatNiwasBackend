@@ -1903,53 +1903,80 @@ export const getAllFAQss = asyncHandler(async (req, res, next) => {
   
     res.status(200).json(sites);
   });
-  
-  
-  
+
 
 
   
-export const createBlog = asyncHandler(async (req, res, next) => {
+  
+  
+  export const createBlog = asyncHandler(async (req, res, next) => {
+    console.log('Function execute1111d');  // For debugging purposes
     try {
-        console.log('Function executed');  // For debugging purposes
       const adminUserId = req.user._id;
   
-      // Check if the user exists
+      // Validate user
       const existingUser = await User.findById(adminUserId);
       if (!existingUser) {
         return next(new ErrorHandler('User not found', 404));
       }
   
-      // Check for admin role
       if (existingUser.role !== 'executive') {
-        return next(new ErrorHandler('Access denied. Only admins can proceed.', 403));
+        return next(new ErrorHandler('Access denied. Only executives can create blogs.', 403));
       }
   
-      const { heading, content, instagramEmbedLink } = req.body;
+      const { heading } = req.body;
+      const blocksRaw = JSON.parse(req.body.block); // block is sent as JSON string
   
-      // Basic validation
-      if (!heading || !content) {
-        return next(new ErrorHandler('Heading and content are required', 400));
+      if (!heading || !blocksRaw || !Array.isArray(blocksRaw) || blocksRaw.length === 0) {
+        return next(new ErrorHandler('Heading and content blocks are required', 400));
+      }
+  
+      const finalBlocks = [];
+  
+      // Convert req.files array to a map for easier lookup
+      const fileMap = {};
+      req.files.forEach(file => {
+        fileMap[file.fieldname] = file;
+      });
+  
+      for (let i = 0; i < blocksRaw.length; i++) {
+        const block = blocksRaw[i];
+        const fileKey = `blockImage${i}`; // Must match the fieldname from form
+  
+        let uploadedImageUrl = '';
+  
+        if (fileMap[fileKey]) {
+          const uploadResult = await cloudinary.uploader.upload(fileMap[fileKey].path);
+          uploadedImageUrl = uploadResult.secure_url;
+  
+          // Clean up local file
+          fs.unlink(fileMap[fileKey].path, (err) => {
+            if (err) console.error(`Error deleting ${fileMap[fileKey].path}:`, err);
+          });
+        }
+  
+        finalBlocks.push({
+          pic: uploadedImageUrl,
+          content: block.content,
+        });
       }
   
       const blog = await Blog.create({
         heading,
-        content,
-        instagramEmbedLink
+        block: finalBlocks,
       });
   
       res.status(201).json({
         success: true,
         message: 'Blog created successfully',
-        data: blog
+        data: blog,
       });
     } catch (error) {
-        console.log('Error while creating blog:', error);
+      console.error('Error creating blog:', error);
       return next(new ErrorHandler(error.message || 'Server Error', 500));
     }
   });
-
-
+  
 
 
   export const getBlogById = asyncHandler(async (req, res, next) => {

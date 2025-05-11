@@ -14,11 +14,7 @@ import IsAllow from "../DataModels/allowForm.js";
 import Site from "../DataModels/SiteSchema.js";
 import Blog from "../DataModels/Blogs.js";
 
-cloudinary.config({
-    cloud_name: "dwpdxuksp",
-    api_key: "611646721796323",
-    api_secret: "ejsJOwHcdFugMNDFy88WXPtPMd8"
-});
+
 
 
 

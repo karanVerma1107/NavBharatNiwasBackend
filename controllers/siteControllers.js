@@ -6,11 +6,7 @@ import fs from 'fs';
 import FAQ from "../DataModels/FAQ.js";
 import User from "../DataModels/userSchema.js";
 
-cloudinary.config({
-    cloud_name: "dwpdxuksp",
-    api_key: "611646721796323",
-    api_secret: "ejsJOwHcdFugMNDFy88WXPtPMd8"
-}); 
+
   
 
 // Add a Site to inventory

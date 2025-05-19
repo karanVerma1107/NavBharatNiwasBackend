@@ -2,7 +2,7 @@ import express from 'express';
 import { isAuthenticatedUser } from '../middleware/auth.js';    
 import { addSite, createFAQ, deleteFAQsBeforeDate, deleteSite, editSite, getAllFAQs, getPostsByCurrentStatus, getSiteById, getSitesWithPagination, getTop5SiteImages, searchSite, uploadReceipt } from '../controllers/siteControllers.js';
 import { upload } from '../middleware/helper/multer.js';
-import { checkFormAndFetchResults, createBlog, createCompanyAllotment, createFaa, createIndiAllotment, getAllBlogs, getAllFAQss, getAllotmentById, getBlogById, getCompanyFills, getIsAllow, getIsAllowResults, getLuckyDrawById, getLuckyDraws, getSitesByStateAndCity, getUserAllotments, pushCompanyIdToResult, pushIdToResult, searchAllotments, searchCompanyFillById, searchLuckyDrawById, updateCompanyFillStatus, updateLuckyDrawStatus, updateSignature, updateUserHistory } from '../controllers/drawControllers.js';
+import { checkFormAndFetchResults, createBlog, createCompanyAllotment, createFaa, createIndiAllotment, getAllBlogs, getAllFAQss, getAllotmentById, getBlogById, getBlogByPermalink, getCompanyFills, getIsAllow, getIsAllowResults, getLuckyDrawById, getLuckyDraws, getSitesByStateAndCity, getUserAllotments, pushCompanyIdToResult, pushIdToResult, searchAllotments, searchBlogsByPermalink, searchCompanyFillById, searchLuckyDrawById, updateCompanyFillStatus, updateLuckyDrawStatus, updateSignature, updateUserHistory } from '../controllers/drawControllers.js';
 
 const Srouter = express.Router();
 
@@ -43,8 +43,8 @@ Srouter.route('/getAllotmentbyId/:id').get(isAuthenticatedUser, getAllotmentById
 Srouter.route('/sign/:allotmentId').post(isAuthenticatedUser, updateSignature );
 Srouter.route('/seefaq').get(isAuthenticatedUser,getAllFAQss);
 Srouter.route('/blogpost').post(isAuthenticatedUser, upload.any(), createBlog);
-Srouter.route('/blog/:id').get(getBlogById);
+Srouter.route('/blog/:permalink').get(getBlogByPermalink);
 Srouter.route('/allblogs').get(getAllBlogs);
-
+Srouter.route('getBlogsbyPermalink/:permalink').get(searchBlogsByPermalink);
 
 export default Srouter;

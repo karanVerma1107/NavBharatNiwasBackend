@@ -1,5 +1,3 @@
-// blogModel.js
-
 import mongoose from 'mongoose';
 
 const blogSchema = new mongoose.Schema({
@@ -8,11 +6,37 @@ const blogSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  permalink: {
+    type: String,
+    required: true,
+    unique: true, // to prevent duplicate slugs
+    lowercase: true,
+    trim: true,
+  },
+  metaTitle: {
+    type: String,
+    required: false,
+    trim: true,
+  },
+  metaDescription: {
+    type: String,
+    required: false,
+    trim: true,
+  },
+  metaKeywords: {
+    type: [String], // Array of keywords
+    default: [],
+  },
+  author: {
+    type: String,
+    required: false,
+    trim: true,
+  },
   block: [
     {
       pic: {
-        type: String, // URL or path to the picture
-        required: false, // optional if not every block has a picture
+        type: String,
+        required: false,
       },
       content: {
         type: String,

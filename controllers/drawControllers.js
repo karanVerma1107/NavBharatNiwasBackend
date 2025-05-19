@@ -1908,76 +1908,97 @@ export const getAllFAQss = asyncHandler(async (req, res, next) => {
 
   
   
-  
-  export const createBlog = asyncHandler(async (req, res, next) => {
-    console.log('Function execute1111d');  // For debugging purposes
-    try {
-      const adminUserId = req.user._id;
-  
-      // Validate user
-      const existingUser = await User.findById(adminUserId);
-      if (!existingUser) {
-        return next(new ErrorHandler('User not found', 404));
-      }
-  
-      if (existingUser.role !== 'executive') {
-        return next(new ErrorHandler('Access denied. Only executives can create blogs.', 403));
-      }
-  
-      const { heading } = req.body;
-      const blocksRaw = JSON.parse(req.body.block); // block is sent as JSON string
-  
-      if (!heading || !blocksRaw || !Array.isArray(blocksRaw) || blocksRaw.length === 0) {
-        return next(new ErrorHandler('Heading and content blocks are required', 400));
-      }
-  
-      const finalBlocks = [];
-  
-      // Convert req.files array to a map for easier lookup
-      const fileMap = {};
-      req.files.forEach(file => {
-        fileMap[file.fieldname] = file;
-      });
-  
-      for (let i = 0; i < blocksRaw.length; i++) {
-        const block = blocksRaw[i];
-        const fileKey = `blockImage${i}`; // Must match the fieldname from form
-  
-        let uploadedImageUrl = '';
-  
-        if (fileMap[fileKey]) {
-          const uploadResult = await cloudinary.uploader.upload(fileMap[fileKey].path);
-          uploadedImageUrl = uploadResult.secure_url;
-  
-          // Clean up local file
-          fs.unlink(fileMap[fileKey].path, (err) => {
-            if (err) console.error(`Error deleting ${fileMap[fileKey].path}:`, err);
-          });
-        }
-  
-        finalBlocks.push({
-          pic: uploadedImageUrl,
-          content: block.content,
+  // Slug generator utility
+const generateSlug = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+
+
+export const createBlog = asyncHandler(async (req, res, next) => {
+  try {
+    const adminUserId = req.user._id;
+
+    // Validate user
+    const existingUser = await User.findById(adminUserId);
+    if (!existingUser) return next(new ErrorHandler('User not found', 404));
+    if (existingUser.role !== 'executive') {
+      return next(new ErrorHandler('Access denied. Only executives can create blogs.', 403));
+    }
+
+    const {
+      heading,
+      metaTitle,
+      metaDescription,
+      metaKeywords, // comma-separated string
+     
+    } = req.body;
+
+    const blocksRaw = JSON.parse(req.body.block);
+
+    if (!heading || !blocksRaw || !Array.isArray(blocksRaw) || blocksRaw.length === 0) {
+      return next(new ErrorHandler('Heading and content blocks are required', 400));
+    }
+
+    const permalink = generateSlug(heading);
+
+    // Check for existing blog with same permalink
+    const existingBlog = await Blog.findOne({ permalink });
+    if (existingBlog) {
+      return next(new ErrorHandler('A blog with this heading/permalink already exists', 409));
+    }
+
+    const finalBlocks = [];
+    const fileMap = {};
+    req.files.forEach(file => {
+      fileMap[file.fieldname] = file;
+    });
+
+    for (let i = 0; i < blocksRaw.length; i++) {
+      const block = blocksRaw[i];
+      const fileKey = `blockImage${i}`;
+
+      let uploadedImageUrl = '';
+
+      if (fileMap[fileKey]) {
+        const uploadResult = await cloudinary.uploader.upload(fileMap[fileKey].path);
+        uploadedImageUrl = uploadResult.secure_url;
+
+        // Clean up local file
+        fs.unlink(fileMap[fileKey].path, (err) => {
+          if (err) console.error(`Error deleting ${fileMap[fileKey].path}:`, err);
         });
       }
-  
-      const blog = await Blog.create({
-        heading,
-        block: finalBlocks,
-      });
-  
-      res.status(201).json({
-        success: true,
-        message: 'Blog created successfully',
-        data: blog,
-      });
-    } catch (error) {
-      console.error('Error creating blog:', error);
-      return next(new ErrorHandler(error.message || 'Server Error', 500));
-    }
-  });
-  
 
+      finalBlocks.push({
+        pic: uploadedImageUrl,
+        content: block.content,
+      });
+    }
+
+    const blog = await Blog.create({
+      heading,
+      permalink,
+      metaTitle,
+      metaDescription,
+      metaKeywords: metaKeywords ? metaKeywords.split(',').map(k => k.trim()) : [],
+      
+      block: finalBlocks,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Blog created successfully',
+      data: blog,
+    });
+  } catch (error) {
+    console.error('Error creating blog:', error);
+    return next(new ErrorHandler(error.message || 'Server Error', 500));
+  }
+});
 
   export const getBlogById = asyncHandler(async (req, res, next) => {
     try {
@@ -2014,3 +2035,47 @@ export const getAllBlogs = asyncHandler(async (req, res, next) => {
       return next(new ErrorHandler(error.message || 'Failed to fetch blogs', 500));
     }
   });
+
+
+// GET blog by permalink
+export const getBlogByPermalink = asyncHandler(async (req, res, next) => {
+  try {
+    const { permalink } = req.params;
+
+    const blog = await Blog.findOne({ permalink });
+
+    if (!blog) {
+      return next(new ErrorHandler('Blog not found with the provided permalink', 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: blog,
+    });
+  } catch (error) {
+    next(new ErrorHandler('Failed to fetch blog by permalink', 500));
+  }
+});
+
+
+// GET blogs where permalink contains a keyword (case-insensitive)
+export const searchBlogsByPermalink = asyncHandler(async (req, res, next) => {
+  try {
+    const { keyword } = req.params;
+
+    const blogs = await Blog.find({
+      permalink: { $regex: keyword, $options: 'i' } // case-insensitive search in permalink
+    }).sort({ createdAt: -1 }); // newest first
+
+    if (!blogs || blogs.length === 0) {
+      return next(new ErrorHandler('No blogs found with the given keyword in permalink', 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: blogs,
+    });
+  } catch (error) {
+    next(new ErrorHandler('Failed to search blogs by permalink', 500));
+  }
+});

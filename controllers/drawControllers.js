@@ -2061,10 +2061,10 @@ export const getBlogByPermalink = asyncHandler(async (req, res, next) => {
 // GET blogs where permalink contains a keyword (case-insensitive)
 export const searchBlogsByPermalink = asyncHandler(async (req, res, next) => {
   try {
-    const { keyword } = req.params;
+    const { permalink } = req.params;
 
     const blogs = await Blog.find({
-      permalink: { $regex: keyword, $options: 'i' } // case-insensitive search in permalink
+      permalink: { $regex: permalink, $options: 'i' } // case-insensitive search in permalink
     }).sort({ createdAt: -1 }); // newest first
 
     if (!blogs || blogs.length === 0) {

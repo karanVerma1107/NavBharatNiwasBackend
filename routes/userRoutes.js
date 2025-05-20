@@ -19,7 +19,8 @@ Urouter.route('/create-draw')
     isAuthenticatedUser, // Ensure user is authenticated
     upload.fields([       // Handle multiple files (profile, Aadhaar, PAN images)
       { name: 'image', maxCount: 1 }, // Profile image
-      { name: 'adhaarPhoto', maxCount: 1 }, // Aadhaar image
+      { name: 'adhaarPhoto', maxCount: 1 },
+      { name: 'adhaarPhoto2', maxCount: 1 }, // Aadhaar image
       { name: 'panPhoto', maxCount: 1 } // PAN image
     ]),
     createForm // Call the createForm function to handle form creation

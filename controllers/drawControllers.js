@@ -34,6 +34,7 @@ export const createForm = asyncHandler(async (req, res, next) => {
         AdhaarNo, 
         PANno, 
         address, 
+        Executive,
         DOB, 
         nationality, 
         project, 
@@ -45,6 +46,7 @@ export const createForm = asyncHandler(async (req, res, next) => {
     // Correctly accessing the uploaded files from req.files
     const image = req.files?.image ? req.files.image[0] : null;  // Profile image
     const adhaarPhoto = req.files?.adhaarPhoto ? req.files.adhaarPhoto[0] : null; // Aadhaar image
+     const adhaarPhoto2 = req.files?.adhaarPhoto ? req.files.adhaarPhoto[0] : null; // Aadhaar image
     const panPhoto = req.files?.panPhoto ? req.files.panPhoto[0] : null; // PAN image
 
     console.log('req.body', req.body);
@@ -97,6 +99,9 @@ export const createForm = asyncHandler(async (req, res, next) => {
             const adhaarPhotoResult = await cloudinary.uploader.upload(adhaarPhoto.path); // Upload Aadhaar photo
             const adhaarPhotoUrl = adhaarPhotoResult.secure_url;
 
+            const adhaarPhoto2Result = await cloudinary.uploader.upload(adhaarPhoto2.path); // Upload Aadhaar photo
+            const adhaarPhoto2Url = adhaarPhoto2Result.secure_url;
+
             const panPhotoResult = await cloudinary.uploader.upload(panPhoto.path); // Upload PAN photo
             const panPhotoUrl = panPhotoResult.secure_url;
 
@@ -119,7 +124,9 @@ export const createForm = asyncHandler(async (req, res, next) => {
                 occupation,
                 fatherName,
                 AdhaarNo,
-                adhaarPhoto: adhaarPhotoUrl,  // Store the Cloudinary URL for Aadhaar photo
+                adhaarPhoto: adhaarPhotoUrl, 
+                adhaarPhoto2: adhaarPhoto2Url,
+                Executive, // Store the Cloudinary URL for Aadhaar photo
                 PANno,
                 panPhoto: panPhotoUrl,        // Store the Cloudinary URL for PAN photo
                 address,
@@ -270,6 +277,7 @@ export const createCompanyFill = asyncHandler(async (req, res, next) => {
         authorizedSignatory, 
         gstNumber, 
         panNumber, 
+        Executive,
         companyAddress, 
         authorizedSignatoryAddress, 
         paymentPlan,
@@ -328,6 +336,7 @@ export const createCompanyFill = asyncHandler(async (req, res, next) => {
             authorizedSignatory,
             gstNumber,
             panNumber,
+            Executive,
             panPhoto: panPhotoUrl,  // Store Cloudinary URL for PAN photo
             companyAddress,
             authorizedSignatoryAddress,

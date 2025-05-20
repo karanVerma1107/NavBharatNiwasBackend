@@ -48,8 +48,12 @@ const companyFillSchema = new mongoose.Schema({
   paymentPlan: {
     type: String,
     required: [true, 'Payment Plan is required'],
-    enum: ['Down Payment Plan', 'Possession Link Payment Plan', 'Flexi Payment Plan'],
+    enum: ['Down Payment Plan', 'Possession Link Payment Plan', 'Flexi Payment Plan',  'Self Funding Plan', 'Loan Payment Plan'],
     default: 'Installment Plan'
+  },
+   Executive: {
+    type: String,
+    required: true
   },
   createdAt: {
     type: Date,

@@ -26,6 +26,10 @@ const luckyDrawSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+   adhaarPhoto2: { // Added field for Aadhaar photo (URL)
+    type: String,
+    required: true
+  },
   PANno: {
     type: String,
     required: true
@@ -43,6 +47,10 @@ const luckyDrawSchema = new mongoose.Schema({
     required: true
   },
   address: {
+    type: String,
+    required: true
+  },
+   Executive: {
     type: String,
     required: true
   },
@@ -73,7 +81,7 @@ const luckyDrawSchema = new mongoose.Schema({
   paymentPlan: { // Added field for payment plan
     type: String,
     required: true,
-    enum: ['Down Payment Plan', 'Possession Link Payment Plan', 'Flexi Payment Plan'],
+    enum: ['Down Payment Plan', 'Possession Link Payment Plan', 'Flexi Payment Plan', 'Self Funding Plan', 'Loan Payment Plan'],
     default: 'Down Payment Plan'
   },
   plotSize: { // Added field for Plot Size

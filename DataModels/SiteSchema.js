@@ -42,8 +42,13 @@ const siteSchema = new mongoose.Schema({
   },
   ytlink:{
     type: String,
-    required: true
+    required: false
   },
+  PaymentPlan:[
+    {
+      type: String, 
+    }
+  ],
   charges:{
     type: String,
     required: true

@@ -54,7 +54,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware to parse JSON bodies
+// middleware to parse JSON bodies
 app.use(express.json());
 app.use(cookieParser());
 
